@@ -1,0 +1,9 @@
+bucket: 600-900
+recess: 1200-1400
+non + recess: 1600-1700
+non: 1800-1900
+non+large: 2050-2150
+large: 2400-2500
+large+recess: 2700-3000
+large+stick: 3700-3800
+stick: 4650-4900
