@@ -45,7 +45,7 @@ def data_unpacker(filename, measure_format="auto"):
         names = ["x", "y", "z", "volts", "SD", "n"]
         split_data = []
         initial_df = pd.read_csv(
-            "Tims_measurements/"+filename,
+            "Old_measurements/"+filename,
             usecols=[0, 1, 2, 3], names=names)
         slices = len(pd.unique(initial_df["z"]))
         relevant_data = initial_df.drop(columns="z")
@@ -175,6 +175,7 @@ def plot_3d(split_data, filename=""):
         x, y, z = (data[0]["x"], data[0]["y"], data[1])
         x2d = np.reshape(x, np.shape(z))
         y2d = np.reshape(y, np.shape(z))
+        ic(x2d.shape, y2d.shape, z.shape)
         if len(split_data) != 1:
             axs[slice_no].plot_surface(x2d, y2d, z, cmap='plasma')
             axs[slice_no].set_xlabel("x (mm)")
@@ -353,14 +354,14 @@ def magnet_comparator(data1, data2, weighting):
 def main():
     """Runs the whole boi"""
     # Todo plot slices, radii
-    filename1 = "PM12_N_x"
-    filename2 = "PM1"
-    data, slice_dir = slice_unpack(filename1)
-    slice_plotter(data, slice_dir)
-    # data1 = data_unpacker(filename1, "rad1")
+    filename1 = "PM1/PM1"
+    # filename2 = "PM1"
+    # data, slice_dir = slice_unpack(filename1)
+    # slice_plotter(data, slice_dir)
+    data1 = data_unpacker(filename1, "xyz1")
     # data2 = data_unpacker(filename2)
     # heatmap(data1)
-    # plot_3d(data1)
+    plot_3d(data1)
     # homogeniety_characteriser(split_data[0][0])
     # magnet_comparator(data1[0][0], data2[0][0], "simple")
 

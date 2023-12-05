@@ -1,7 +1,6 @@
 """Program to unpack, plot and compare magnets mapped using
 the MagMapper"""
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -35,11 +34,11 @@ class MagMapperData:
         plt.savefig(f"Plots/{self.filename}.png")
 
 
-class OldRectangularFormatData(MagMapperData):
+class OldXYZRectangularData(MagMapperData):
     """Class to handle MagMapper data in the old rectangular format,
     changes in x then y then z"""
 
-    def __init__(self, filename, dataframe):
+    def __init__(self, filename: str, dataframe: pd.DataFrame):
         """Names the columns, ensures field data is accessible
         and flips if necessary"""
         self.filename = filename
@@ -51,31 +50,96 @@ class OldRectangularFormatData(MagMapperData):
         self.dataframe["std_field"] = (self.dataframe["std_volts"]
                                        * HALL_SLOPE)
         self.rectify_field_direction()
+        self.z_values = pd.unique(self.dataframe["z"])
+        self.split_data = []  # Potentially separate for performance
+        for z_slice_num, z_value in enumerate(self.z_values):
+            slice_data = self.dataframe.loc[
+                self.dataframe["z"] == z_value, ["x", "y", "field"]]
+            slice_data.rename(
+                columns={"field": f"field at z={z_value}mm"})
+            self.split_data.append(slice_data)
 
-
-    def plot_heatmap(self):
+    # noinspection PyTypeChecker
+    def plot_heatmaps(self):
         """Plots the data as a heatmap"""
-        x_step = abs(self.dataframe["x"][0] - self.dataframe["x"][1])
-        y_step = abs(pd.unique(self.dataframe["y"])[0] -
-                     pd.unique(self.dataframe["y"])[1])
-        fig, axs = plt.subplots(ncols=len(split_data),
+        # TODO output z val somewhere, pull out error checks?
+        x_steps = np.diff(pd.unique(self.dataframe["x"]))
+        y_steps = np.diff(pd.unique(self.dataframe["y"]))
+        if not (np.all(x_steps == x_steps[0]) or
+                np.all(y_steps == y_steps[0])):
+            raise ValueError("x or y step sizes are not equal.")
+        num_rows, num_cols = make_rectangle(len(self.z_values))
+        fig, axs = plt.subplots(ncols=num_cols, nrows=num_rows,
                                 sharex=True, sharey=True)
-        for slice_no, data in enumerate(split_data):
-            if len(split_data) != 1:
-                im = axs[slice_no].imshow(data[1])
-                cbar = axs[slice_no].figure.colorbar(im)
-                axs[slice_no].set_xlabel(f"x ({x_step}mm)")
-                axs[slice_no].set_ylabel(f"y ({y_step}mm)")
+        axs = np.atleast_2d(axs)
+        for ax_num, current_ax in enumerate(axs.flatten()):
+            if ax_num >= len(self.z_values):
+                current_ax.axis("off")
             else:
-                im = axs.imshow(data[1])
-                cbar = axs.figure.colorbar(im)
-                axs.set_xlabel(f"x ({x_step}mm)")
-                axs.set_ylabel(f"y ({y_step}mm)")
-            cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
-        plt.show(block=True)
+                slice_data = self.split_data[ax_num]
+                # TODO Improve check for rectangular shaped data,
+                #  duplicates and sample count (x, y dir?), check diff too
+                y_samples = len(pd.unique(slice_data["y"]))
+                x_samples = len(pd.unique(slice_data["x"]))
+                if x_samples * y_samples != len(slice_data["y"]):
+                    # TODO add nans for missing vals?
+                    raise ValueError(f"Not all {y_samples} y samples have "
+                                     f"{x_samples} x samples for "
+                                     f"{len(slice_data['y'])} data points.")
+                reshaped_data = np.reshape(
+                    slice_data["field"], (x_samples, y_samples))
+                # TODO change scales so labels unnecessary
+                im = current_ax.imshow(reshaped_data)
+                # TODO check formatting of colour-bars
+                cbar = current_ax.figure.colorbar(im)
+                current_ax.set_xlabel(f"x ({x_steps[0]}mm)")
+                current_ax.set_ylabel(f"y ({y_steps[0]}mm)")
+                cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
+        plt.show(block=False)
+
+    # noinspection PyTypeChecker
+    def plot_3d(self):
+        """Plots the data as a 3d surface with colour-bar"""
+        x_steps = np.diff(pd.unique(self.dataframe["x"]))
+        y_steps = np.diff(pd.unique(self.dataframe["y"]))
+        if not (np.all(x_steps == x_steps[0]) or
+                np.all(y_steps == y_steps[0])):
+            raise ValueError("x or y step sizes are not equal.")
+        num_rows, num_cols = make_rectangle(len(self.z_values))
+        fig, axs = plt.subplots(ncols=num_cols, nrows=num_rows,
+                                sharex=True, sharey=True,
+                                subplot_kw={"projection": "3d"})
+        axs = np.atleast_2d(axs)
+        for ax_num, current_ax in enumerate(axs.flatten()):
+            if ax_num >= len(self.z_values):
+                current_ax.axis("off")
+            else:
+                slice_data = self.split_data[ax_num]
+                y_samples = len(pd.unique(slice_data["y"]))
+                x_samples = len(pd.unique(slice_data["x"]))
+                if x_samples * y_samples != len(slice_data["y"]):
+                    raise ValueError(f"Not all {y_samples} y samples"
+                                     f" have {x_samples} x samples for"
+                                     f" {len(slice_data['y'])} data"
+                                     f" points.")
+                reshaped_field = np.reshape(
+                    slice_data["field"], (x_samples, y_samples))
+                reshaped_x = np.reshape(
+                    slice_data["x"], reshaped_field.shape)
+                reshaped_y = np.reshape(
+                    slice_data["y"], reshaped_field.shape)
+                surf = current_ax.plot_surface(
+                    reshaped_x, reshaped_y, reshaped_field,
+                    cmap='plasma')
+                current_ax.set_xlabel(f"x (mm)")
+                current_ax.set_ylabel(f"y (mm)")
+                current_ax.set_zlabel("Field (T)")
+                cbar = current_ax.figure.colorbar(surf, ax=current_ax)
+                cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
+        plt.show(block=False)
 
 
-class NewRotationalFormatData(MagMapperData):
+class NewRotationalData(MagMapperData):
     """Class to handle MagMapper data in the new rotational format,
     changes in theta then x then z"""
 
@@ -88,48 +152,92 @@ class NewRotationalFormatData(MagMapperData):
                  "field", "std_field", "n"]
         self.dataframe.columns = names
         self.rectify_field_direction()
+        self.z_values = pd.unique(self.dataframe["z"])
         self.dataframe["theta"] = np.deg2rad(self.dataframe["theta_deg"])
         self.centre_xy()
         self.dataframe["r"] = np.sqrt(
             self.dataframe["x"] ** 2 + self.dataframe["y"] ** 2)
+        self.z_values = pd.unique(self.dataframe["z"])
+        self.split_data = []
+        for z_slice_num, z_value in enumerate(self.z_values):
+            slice_data = self.dataframe.loc[
+                self.dataframe["z"] == z_value, ["r", "theta", "field"]]
+            slice_data.rename(
+                columns={"field": f"field at z={z_value}mm"})
+            self.split_data.append(slice_data)
 
     def centre_xy(self):
-        """Centres the x and y data"""
+        """With available data, centres the values around lowest
+        field change per theta"""
         # TODO: check centering (~0.0007 vs ~0.003)
         #  check taking max val vs lowest sum amps
-        self.dataframe["x"] -= APPROX_CENTRE[0]
-        self.dataframe["y"] = self.dataframe["y"] - APPROX_CENTRE[1]
+        sum_field_change_list = []
+        self.dataframe["y"] = 0
+        for x_radius in pd.unique(self.dataframe["x"]):
+            radial_data = self.dataframe.loc[
+                self.dataframe["x"] == x_radius, "field"]
+            sum_field_change = np.sum(np.abs(np.diff(radial_data)))
+            sum_field_change_list.append((sum_field_change, x_radius))
+        min_x_radius = min(sum_field_change_list)[1]
+        self.dataframe["x"] = self.dataframe["x"] - min_x_radius
+        return None
 
-    def plot(self):
-        """Plots the magnetic field strength in the z-direction
-        as a 3d surface with a colour-bar
-        """
-
-
-    def plot_heatmap(self):
+    # noinspection PyTypeChecker
+    def plot_heatmaps(self):
         """Plots the data as a heatmap"""
-        x_step = abs(self.dataframe["x"][0] - self.dataframe["x"][1])
-        y_step = abs(pd.unique(self.dataframe["y"])[0] -
-                     pd.unique(self.dataframe["y"])[1])
-        fig, axs = plt.subplots(ncols=len(split_data),
-                                sharex=True, sharey=True)
-        for slice_no, data in enumerate(split_data):
-            if len(split_data) != 1:
-                im = axs[slice_no].imshow(data[1])
-                cbar = axs[slice_no].figure.colorbar(im)
-                axs[slice_no].set_xlabel(f"x ({x_step}mm)")
-                axs[slice_no].set_ylabel(f"y ({y_step}mm)")
+        self.dataframe.drop_duplicates(subset=["r", "theta"],
+                                       inplace=True)  # TODO pull out
+        # TODO is this necessary?
+        # r_steps = np.diff(pd.unique(self.dataframe["r"]))
+        # theta_steps = np.diff(pd.unique(self.dataframe["theta"]))
+        # if not (np.all(r_steps == r_steps[0]) or
+        #         np.all(theta_steps == theta_steps[0])):
+        #     raise ValueError("x or y step sizes are not equal.")
+        num_rows, num_cols = make_rectangle(len(self.z_values))
+        fig, axs = plt.subplots(ncols=num_cols, nrows=num_rows,
+                                sharex=True, sharey=True,
+                                subplot_kw={'polar': 'True'})
+        axs = np.atleast_2d(axs)
+        for ax_num, current_ax in enumerate(axs.flatten()):
+            if ax_num >= len(self.z_values):
+                current_ax.axis("off")
             else:
-                im = axs.imshow(data[1])
-                cbar = axs.figure.colorbar(im)
-                axs.set_xlabel(f"x ({x_step}mm)")
-                axs.set_ylabel(f"y ({y_step}mm)")
-            cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
-        plt.show(block=True)
+                slice_data = self.split_data[ax_num]
+                slice_data.drop_duplicates(subset=["r", "theta"],
+                                           inplace=True)
+                r_vals = pd.unique(slice_data["r"])
+                theta_vals = pd.unique(slice_data["theta"])
+                r_samples = len(r_vals)
+                theta_samples = len(theta_vals)
+                if r_samples * theta_samples != len(slice_data.index):
+                    raise ValueError(f"Not all {r_samples} radius "
+                                     f"samples have {theta_samples} "
+                                     f"theta samples for "
+                                     f"{len(slice_data.index)} "
+                                     f"data points.")
+                # TODO check theta direction, location
+                r, th = np.meshgrid(r_vals, theta_vals)
+                # Packing of theta and r are switched vs optimal for plt
+                field = np.reshape(slice_data["field"], r.T.shape)
+                im = current_ax.pcolormesh(th, r, field.T)
+                # TODO check formatting many plots
+                current_ax.set_rticks([0, max(r_vals)])
+                # Magic nums put text next to outer r tick
+                # could also be done like ThetaFormatter but not worth
+                # the time
+                current_ax.text(0.36, max(r_vals)+4.5, "(mm)",
+                                va='center', ha='center',
+                                rotation='horizontal',
+                                rotation_mode='anchor')
+                current_ax.grid(False)
+                cbar = current_ax.figure.colorbar(im, pad=0.1)
+                cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
+        plt.show(block=False)
 
 
 class Slice(MagMapperData):
     """Parent class for x and y slices"""
+
     def __init__(self, filename, dataframe):
         """Names the columns, flips field if necessary"""
         self.filename = filename
@@ -173,304 +281,44 @@ def unpack_magmapper_data(filename):
     #  recalibrate hall sensor?, include z val in plots(only rel)
     #  check sd and n too, esp old files,
     #  return non-centered data at end?,
-    #  checks to make sure data is good
-    dataframe = pd.read_csv(filename)
+    #  checks to make sure data is good(as expected)
+    dataframe = pd.read_csv(filename, header=None)
+    dataframe.dropna(axis=0, how="all", inplace=True)
+    dataframe.dropna(axis=1, how="all", inplace=True)
     num_names = len(dataframe.columns)
     if num_names != 6 and num_names != 9:
-        raise ValueError("Invalid data format")
+        raise ValueError(f"Invalid data format. There are {num_names}"
+                         f"columns, expected 6 or 9.")
     elif num_names == 6:
-        return OldRectangularFormatData(filename, dataframe)
-    data = NewRotationalFormatData(filename, dataframe)
-    if len(pd.unique(data.dataframe["x"])) == 1:
-        data = YSlice(filename, dataframe)
-    elif len(pd.unique(data.dataframe["y"])) == 1:
-        data = XSlice(filename, dataframe)
+        return OldXYZRectangularData(filename, dataframe)
+    data = NewRotationalData(filename, dataframe)
+    if len(pd.unique(data.dataframe["theta"])) == 1:
+        if len(pd.unique(data.dataframe["x"])) == 1:
+            data = YSlice(filename, dataframe)
+        elif len(pd.unique(data.dataframe["y"])) == 1:
+            data = XSlice(filename, dataframe)
     return data
 
 
-def rad_unpack():
-    # radius_sample = initial_df.where(initial_df["r"] == 10).dropna()
-    # ic(radius_sample)
-    # plt.plot(radius_sample["theta"], radius_sample["field"], "o")
-    # plt.show()
-    cart_df = cylindrical_to_cartesian(
-        initial_df.loc[:, ["r", "theta", "field"]])
-    interp_list = interp_2d(cart_df)
-    frames = []
-    for y_val in interp_list[1]:
-        xy_slice = pd.DataFrame(
-            {"x": interp_list[0], "y": [y_val] * len(interp_list[0])})
-        frames.append(xy_slice)
-    xy_df = pd.concat(frames, axis=0, ignore_index=True)
-    field_series = pd.Series(np.array(interp_list[2]).flatten(),
-                             name="field", dtype=np.float64)
-    grid_cart_df = pd.concat([xy_df, field_series], axis=1)
-    # -----------------------
-    # ------------------------
-    return [[grid_cart_df, interp_list[2]]]
-
-
-def reshaper(data):
-    """Reshapes the data into a 2d array"""
-    split_data = []
-    num_slices = len(pd.unique(data["z"]))
-    z_samples = int(len(data["x"]) / num_slices)
-    y_samples = len(pd.unique(data["y"]))
-    x_samples = int(len(data["y"]) / y_samples / num_slices)
-    new_shape = (x_samples, y_samples)
-    for _slice in range(num_slices):
-        offset = _slice * z_samples
-        slice_data = data.iloc[
-                     offset: offset + z_samples]
-        reformatted_data = np.reshape(
-            slice_data["field"], new_shape)
-        split_data.append([slice_data, reformatted_data])
-    return split_data
-
-
-def interp_2d(irregular_data):
-    """Interpolates radial data back to a 2d grid, remove?"""
-    # TODO smart set values for interp grid?
-    interp = CloughTocher2DInterpolator(
-        list(zip(irregular_data["x"], irregular_data["y"])),
-        irregular_data["field"])
-    structured_data = pd.DataFrame()
-    structured_data["x"] = np.linspace(
-        min(irregular_data["x"]), max(irregular_data["x"]),
-        num=INTERPOLATION_GRID)
-    structured_data["y"] = structured_data["x"]
-    x_grid, y_grid = np.meshgrid(
-        structured_data["x"], structured_data["y"])
-    interp_field = interp(x_grid, y_grid)
-    return [structured_data["x"], structured_data["y"], interp_field]
-
-
-def heatmap(split_data, filename=""):
-    """Creates a heatmap of the magnetic field strength (z-direction)"""
-    x_step = abs(pd.unique(split_data[0][0]["x"])[0] -
-                 pd.unique(split_data[0][0]["x"])[1])
-    y_step = abs(pd.unique(split_data[0][0]["y"])[0] -
-                 pd.unique(split_data[0][0]["y"])[1])
-    fig, axs = plt.subplots(ncols=len(split_data),
-                            sharex=True, sharey=True)
-    for slice_no, data in enumerate(split_data):
-        if len(split_data) != 1:
-            im = axs[slice_no].imshow(data[1])
-            cbar = axs[slice_no].figure.colorbar(im)
-            axs[slice_no].set_xlabel(f"x ({x_step}mm)")
-            axs[slice_no].set_ylabel(f"y ({y_step}mm)")
+def make_rectangle(length):
+    """Finds dimensions of a minimal rectangle
+    (closest to square, with no empty rows/cols)
+    from the given length"""
+    rows, cols = 1, 1
+    while rows * cols < length:
+        if cols > rows:
+            rows += 1
         else:
-            im = axs.imshow(data[1])
-            cbar = axs.figure.colorbar(im)
-            axs.set_xlabel(f"x ({x_step}mm)")
-            axs.set_ylabel(f"y ({y_step}mm)")
-        cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
-    if filename:
-        plt.savefig(f"Plots/{filename}.png")
-    plt.show(block=True)
-
-
-def plot_3d(split_data, filename=""):
-    """Plots the data as a 3d surface with colour-bar"""
-    fig, axs = plt.subplots(ncols=len(split_data),
-                            sharex=True, sharey=True,
-                            subplot_kw={"projection": "3d"})
-    for slice_no, data in enumerate(split_data):
-        x, y, z = (data[0]["x"], data[0]["y"], data[1])
-        x2d = np.reshape(x, np.shape(z))
-        y2d = np.reshape(y, np.shape(z))
-        if len(split_data) != 1:
-            axs[slice_no].plot_surface(x2d, y2d, z, cmap='plasma')
-            axs[slice_no].set_xlabel("x (mm)")
-            axs[slice_no].set_ylabel("y (mm)")
-            axs[slice_no].set_zlabel("Field (T)")
-            norm = mpl.colors.Normalize(vmin=0, vmax=np.max(z))
-            sm = plt.cm.ScalarMappable(cmap='plasma', norm=norm)
-            sm.set_array([])
-            cbar = plt.colorbar(sm, ax=axs[slice_no])
-        else:
-            surf = axs.plot_surface(x2d, y2d, z, cmap='plasma')
-            axs.set_xlabel("x (mm)")
-            axs.set_ylabel("y (mm)")
-            axs.set_zlabel("Field (T)")
-            cbar = plt.colorbar(surf, ax=axs)
-    # noinspection PyUnboundLocalVariable
-    cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
-    if filename:
-        plt.savefig(f"Plots/{filename}_3d.png")
-    plt.show(block=True)
-
-
-def cartesian_to_cylindrical(xyz_dataframe):
-    """Converts the coordinates from cartesian to cylindrical credit mtrw
-    Input : xyz_dataframe (2d DataFrame with x, y, field columns)
-    Returns : 2d array of data in cylindrical coordinates,
-    columns r, theta, field"""
-    # TODO: adjust array vs df handling throughout
-    #  (everything should be df)
-    if isinstance(xyz_dataframe, pd.DataFrame):
-        xyz_data = xyz_dataframe.to_numpy()
-    else:
-        xyz_data = xyz_dataframe
-    cylindrical_data = np.hstack((xyz_data, np.zeros(xyz_data.shape)))
-    xy = xyz_data[:, 0] ** 2 + xyz_data[:, 1] ** 2
-    cylindrical_data[:, 3] = np.sqrt(xy + xyz_data[:, 2] ** 2)
-    cylindrical_data[:, 4] = np.arctan2(xyz_data[:, 1], xyz_data[:, 0])
-    cylindrical_data[:, 5] = xyz_data[:, 2]
-    return cylindrical_data[:, 3:6]
-
-
-def cylindrical_to_cartesian(cylinder_data):
-    """Converts back from cylindrical coords to xyz"""
-    if isinstance(cylinder_data, pd.DataFrame):
-        cylinder_data = cylinder_data.to_numpy()
-    cartesian_data = np.zeros(cylinder_data.shape)
-    cartesian_data[:, 0] = cylinder_data[:, 0] * np.cos(
-        cylinder_data[:, 1])
-    cartesian_data[:, 1] = cylinder_data[:, 0] * np.sin(
-        cylinder_data[:, 1])
-    cartesian_data[:, 2] = cylinder_data[:, 2]
-    return pd.DataFrame(cartesian_data, columns=['x', 'y', 'field'])
-
-
-def dft_helper(field_data, radii):
-    """Helper function for unrolling data and taking the dft"""
-    radial_data = cartesian_to_cylindrical(centre_helper(field_data))
-    samp_int = field_data[0, "x"] - field_data[1, "x"]
-    amp_list = []
-    freq_list = []
-    for radius in radii:
-        radius_mask = (radial_data[:, 0] > radius - 1) & (
-                    radial_data[:, 0] < radius + 1)  # mask?
-        field_at_radius = radial_data[:, 2][radius_mask]
-        nfft = len(field_at_radius)
-        four = np.fft.fft(field_at_radius)
-        amplitudes = abs(four[0:int(nfft / 2)]) * (2.0 / nfft)
-        frequencies = np.arange(0, int(nfft / 2)) / (nfft * samp_int)
-        amp_list.append(amplitudes)
-        freq_list.append(frequencies)
-    ic(amp_list, freq_list)
-    return amp_list, freq_list
-
-
-def homogeniety_characteriser(field_data):
-    """Characterises the homogeneity of a magnet"""
-    radii = np.linspace(0, 100, 100)
-    dft_helper(field_data, radii)
-
-
-def centre_helper(field_data, centre=np.nan):
-    """Centres the data
-    field_data (DataFrame with x,y,field columns)
-    """
-    # TODO should be lowest change in field for change in theta?
-    #  avoid edge somehow
-    if not np.isnan(centre):
-        centre_coords = centre
-    else:
-        centre_index = np.argmax(field_data["field"])
-        centre_coords = (
-            field_data.loc[centre_index, "x"],
-            field_data.loc[centre_index, "y"])
-    centred_data = field_data.loc[:, "x":"y"] - centre_coords
-    full_centred_data = pd.concat(
-        (centred_data, field_data["field"]), axis=1)
-    return full_centred_data
-
-
-def square_to_circle_data(xyz_data, radius):
-    """Converts the square data to circle with radius specified"""
-    radial_data = cartesian_to_cylindrical(xyz_data)
-    return radial_data[radial_data[:, 0] < radius]
-
-
-def calc_drag_force(fourier_data):
-    """Calculates the drag force between two magnet
-    use mean for one mag inhomogeneity.
-    Input: fourier_data (dataframe with multi index, radius then amplitudes and frequencies)
-    """
-    # TODO vectorize if used
-    b_mean = np.mean(fourier_data.loc[:, "field"])  # TODO check data struc
-    rq = 0
-    qi = 0
-    for radius in fourier_data.index.levels[0]:
-        q = 0
-        for amplitude, index in enumerate(
-                fourier_data.loc[radius, "amplitudes"]):
-            frequency = fourier_data.loc[radius, "frequencies"][index]
-            q += (frequency * amplitude ** 3 *
-                  (2 - b_mean * amplitude / (U_0 ** 2 * radius)) / (
-                              b_mean * radius))
-        rq += radius * q
-        qi += q
-    return rq / qi
-
-
-def magnet_comparator(data1, data2, weighting):
-    """Compares the inhomogeneities in the magnetic fields of two magnets
-    using a determined weighting
-    TODO: Implement weightings, add rotation, check mapping
-    Simple:
-        Add sum of squares
-    Centre:
-        Sum of squares weighted by distance from centre with gaussian
-    Edge:
-        Sum of squares weighted by distance from centre with inverse gaussian
-    Radial weighting:
-        Unrolling radii of magnetic field then taking DFT
-        Reducing R=sum(rQ)/sum(Q) over all radii
-        Where Q = sum(f*A^3/(r*B1mean)*(2-B1mean*A/(u0^2*r)) for all frequencies
-    """
-    rotation_resolution = 0.1
-    inhomogeneity_list = []
-    centre_data1 = centre_helper(data1)
-    centre_data2 = centre_helper(data2)
-    if weighting == "simple":
-        edges = [centre_data1["y"][0], centre_data1["y"].iloc[-1],
-                 centre_data1["x"][0], centre_data1["x"].iloc[-1],
-                 centre_data2["y"][0], centre_data2["y"].iloc[-1],
-                 centre_data2["x"][0], centre_data2["x"].iloc[-1]
-                 ]
-        largest_radius = np.min(np.abs(edges))
-        circle_data1 = cylindrical_to_cartesian(
-            square_to_circle_data(centre_data1, largest_radius))
-        circle_rad_data2 = square_to_circle_data(centre_data2, largest_radius)
-        for theta_multiplier in np.arange(0, 2 * np.pi / rotation_resolution):
-            circ_data2_next = circle_rad_data2.copy()
-            circ_data2_next[:, 1] = circle_rad_data2[:,
-                                    1] + rotation_resolution * theta_multiplier
-            rotated_cart_data2 = cylindrical_to_cartesian(circ_data2_next)
-            # rotated_cart_data2.sort_values(
-            # by=["y", "x"], ignore_index=True, inplace=True)
-
-            difference_in_inhomogeneity = np.sum(
-                (circle_data1["field"] - rotated_cart_data2["field"]) ** 2)
-            # map points?
-
-            map_ = np.zeros(np.shape(data1))
-
-            inhomogeneity_list.append(difference_in_inhomogeneity)
-        # ic(inhomogeneity_list)
-        # print(np.min(inhomogeneity_list))
-    else:
-        radii = np.linspace(0, 100, 100)
-        rdata1 = dft_helper(data1, radii)
-        rdata2 = dft_helper(data2, radii)
+            cols += 1
+    return rows, cols
 
 
 def main():
     """Runs the whole boi"""
     # Todo plot slices, radii
-    filename1 = "PM12_N_x"
-    filename2 = "PM1"
-    data, slice_dir = slice_unpack(filename1)
-    slice_plotter(data, slice_dir)
-    # data1 = data_unpacker(filename1, "rad1")
-    # data2 = data_unpacker(filename2)
-    # heatmap(data1)
-    # plot_3d(data1)
-    # homogeniety_characteriser(split_data[0][0])
-    # magnet_comparator(data1[0][0], data2[0][0], "simple")
+    filename1 = "Tims_measurements/PM8/PM8_rot"
+    data1 = unpack_magmapper_data(filename1)
+    data1.plot_heatmaps()
 
 
 if __name__ == "__main__":
