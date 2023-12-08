@@ -4,9 +4,10 @@ the MagMapper"""
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+# noinspection PyUnresolvedReferences
 import glob
+# noinspection PyUnresolvedReferences
 from icecream import ic
-
 
 U_0 = 4 * np.pi * 10 ** -7
 HALL_INTERCEPT = -0.010254
@@ -40,7 +41,6 @@ class MagMapperData:
 class OldXYZRectangularData(MagMapperData):
     """Class to handle MagMapper data in the old rectangular format,
     changes in x then y then z"""
-    # TODO add different order xyz
 
     def __init__(self, filename: str, dataframe: pd.DataFrame):
         """Names the columns, ensures field data is accessible
@@ -60,13 +60,11 @@ class OldXYZRectangularData(MagMapperData):
             slice_data = self.dataframe.loc[
                 self.dataframe["z"] == z_value, ["x", "y", "field"]]
             slice_data.rename(
-                columns={"field": f"field at z={z_value}mm"})
+                columns={"field": f"field at z={z_value}mm"})  # reevaluate
             self.split_data.append(slice_data)
 
-    # noinspection PyTypeChecker
     def plot_heatmaps(self):
         """Plots the data as a heatmap"""
-        # TODO output z val somewhere, pull out error checks?
         x_steps = np.diff(pd.unique(self.dataframe["x"]))
         y_steps = np.diff(pd.unique(self.dataframe["y"]))
         if not (np.all(x_steps == x_steps[0]) or
@@ -77,6 +75,7 @@ class OldXYZRectangularData(MagMapperData):
                                 sharex=True, sharey=True)
         axs = np.atleast_2d(axs)
         for ax_num, current_ax in enumerate(axs.flatten()):
+            current_ax: plt.axes
             if ax_num >= len(self.z_values):
                 current_ax.axis("off")
             else:
@@ -86,22 +85,18 @@ class OldXYZRectangularData(MagMapperData):
                 y_samples = len(pd.unique(slice_data["y"]))
                 x_samples = len(pd.unique(slice_data["x"]))
                 if x_samples * y_samples != len(slice_data["y"]):
-                    # TODO add nans for missing vals?
                     raise ValueError(f"Not all {y_samples} y samples have "
                                      f"{x_samples} x samples for "
                                      f"{len(slice_data['y'])} data points.")
                 reshaped_data = np.reshape(
                     slice_data["field"], (x_samples, y_samples))
-                # TODO change scales so labels unnecessary
                 im = current_ax.imshow(reshaped_data)
-                # TODO check formatting of colour-bars
                 cbar = current_ax.figure.colorbar(im)
                 current_ax.set_xlabel(f"x ({x_steps[0]}mm)")
                 current_ax.set_ylabel(f"y ({y_steps[0]}mm)")
                 cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
         plt.show(block=False)
 
-    # noinspection PyTypeChecker
     def plot_3d(self):
         """Plots the data as a 3d surface with colour-bar"""
         x_steps = np.diff(pd.unique(self.dataframe["x"]))
@@ -115,6 +110,7 @@ class OldXYZRectangularData(MagMapperData):
                                 subplot_kw={"projection": "3d"})
         axs = np.atleast_2d(axs)
         for ax_num, current_ax in enumerate(axs.flatten()):
+            current_ax: plt.axes
             if ax_num >= len(self.z_values):
                 current_ax.axis("off")
             else:
@@ -144,7 +140,6 @@ class OldXYZRectangularData(MagMapperData):
 
     def plot_radial_slice(self):
         """Compatability with new data format"""
-        # TODO add?
         print(f"{self.filename} contains data taken in a rectangular "
               f"format, which is not implemented for radial slices.")
 
@@ -163,9 +158,7 @@ class NewRotationalData(MagMapperData):
         self.dataframe.columns = names
         self.rectify_field_direction()
         self.z_values = pd.unique(self.dataframe["z"])
-        self.dataframe["theta"] = np.deg2rad(self.dataframe[
-                                                 "theta_deg"])
-        self.z_values = pd.unique(self.dataframe["z"])
+        self.dataframe["theta"] = np.deg2rad(self.dataframe["theta_deg"])
         self.centre_xy()
         # Could just be set to x
         self.dataframe["r"] = np.sqrt(
@@ -173,27 +166,22 @@ class NewRotationalData(MagMapperData):
         # duplicates pulled first since pandas lacks a stable sort when
         # sorting by multiple columns
         duplicated_mask = self.dataframe.duplicated(
-            subset=["r", "theta"], keep=False)
+            subset=["r", "theta", "z"], keep=False)
         self.duplicated_measures = self.dataframe.loc[duplicated_mask]
-        # TODO use duplicated_measures to evaluate accuracy
-        self.dataframe.drop_duplicates(subset=["r", "theta"],
+        self.dataframe.drop_duplicates(subset=["r", "theta", "z"],
                                        inplace=True)
         self.dataframe.sort_values(
-            ["z", "x", "theta"], axis="columns", inplace=True,
+            ["z", "x", "theta"], axis=0, inplace=True,
             ignore_index=True)
         self.split_data = []
-        for z_slice_num, z_value in enumerate(self.z_values):
+        for z_value in self.z_values:
             slice_data = self.dataframe.loc[
                 self.dataframe["z"] == z_value, ["r", "theta", "field"]]
-            slice_data.rename(
-                columns={"field": f"field at z={z_value}mm"})  # Arguable -----
             self.split_data.append(slice_data)
 
     def centre_xy(self):
         """With available data, centres the values around lowest
         field change per theta"""
-        # TODO compare to forming 200 sided shape with duplicate
-        #  measures at const theta
         field_change_list = []
         # y offset much more difficult to determine, taken as 0 for now
         self.dataframe["y"] = 0
@@ -215,7 +203,6 @@ class NewRotationalData(MagMapperData):
         self.dataframe["x"] -= min_sum_x
         return None
 
-    # noinspection PyTypeChecker
     def plot_heatmaps(self):
         """Plots the data as a heatmap"""
         # TODO is this necessary?
@@ -230,12 +217,11 @@ class NewRotationalData(MagMapperData):
                                 subplot_kw={'polar': 'True'})
         axs = np.atleast_2d(axs)
         for ax_num, current_ax in enumerate(axs.flatten()):
+            current_ax: plt.axes
             if ax_num >= len(self.z_values):
                 current_ax.axis("off")
             else:
                 slice_data = self.split_data[ax_num]
-                slice_data.drop_duplicates(subset=["r", "theta"],
-                                           inplace=True)  # TODO pull out/sort
                 r_vals = pd.unique(slice_data["r"])
                 theta_vals = pd.unique(slice_data["theta"])
                 r_samples = len(r_vals)
@@ -246,12 +232,10 @@ class NewRotationalData(MagMapperData):
                                      f"theta samples for "
                                      f"{len(slice_data.index)} "
                                      f"data points.")
-                # TODO check theta direction, location
                 r, th = np.meshgrid(r_vals, theta_vals)
                 # Packing of theta and r are switched vs plt expected
                 field = np.reshape(slice_data["field"], r.T.shape)
                 im = current_ax.pcolormesh(th, r, field.T)
-                # TODO check formatting many plots
                 current_ax.set_rticks([0, max(r_vals)])
                 # Magic nums put text next to outer r tick, could be
                 # done like ThetaFormatter but not worth the time
@@ -265,29 +249,31 @@ class NewRotationalData(MagMapperData):
         plt.show(block=False)
 
     def plot_radial_slice(self):
-        """Plots slices of constant radii (currently only 1 z_val)"""
-        close_slice = self.dataframe
-        close_slice.drop_duplicates(subset=["r", "theta"],
-                                    inplace=True)
-        radii = pd.unique(close_slice["r"])[::4]  # Variable-------------------
-        fig, axs = plt.subplots(len(radii), sharex=True)
-        fig.subplots_adjust(hspace=0)
-        axs = np.atleast_1d(axs)
-        for radius_idx, radius in enumerate(radii):
-            radial_data = close_slice.loc[
-                close_slice["r"] == radius,
-                ["theta", "field"]]
-            mean_centred_field = (radial_data["field"] - np.mean(
-                radial_data["field"]))*1000
-            axs[radius_idx].plot(radial_data["theta"],
-                                 mean_centred_field, "o-", markersize=2)
-            axs[radius_idx].set_ylabel(f"r={radius:.2f}mm", rotation=0,
-                                       labelpad=35)
-            axs[radius_idx].yaxis.set_label_position("right")
-            # axs[radius_idx].tick_params(axis="y", labelsize=4)
-        fig.supxlabel("Theta (rad)")
-        fig.supylabel("$B_z - B_{z, mean}$ (mT)")
-        plt.show(block=True)
+        """Plots slices of constant radii"""
+        for data_num, z_value_data in enumerate(self.split_data):
+            max_graphs = 6
+            step_size = int(
+                np.ceil(len(pd.unique(z_value_data["r"])) / max_graphs))
+            radii = pd.unique(z_value_data["r"])[::step_size]
+            fig, axs = plt.subplots(len(radii), sharex=True)
+            fig.subplots_adjust(hspace=0)
+            # noinspection PyTypeChecker
+            ax_arr: np.ndarray[plt.axes] = np.atleast_1d(axs)
+            for radius_idx, radius in enumerate(radii):
+                radial_data = z_value_data.loc[
+                    z_value_data["r"] == radius,
+                    ["theta", "field"]]
+                mean_centred_field = (radial_data["field"] - np.mean(
+                    radial_data["field"])) * 1000
+                ax_arr[radius_idx].plot(radial_data["theta"],
+                                        mean_centred_field, "o-", markersize=2)
+                ax_arr[radius_idx].set_ylabel(f"r={radius:.2f}mm", rotation=0,
+                                              labelpad=35)
+                ax_arr[radius_idx].yaxis.set_label_position("right")
+            fig.supxlabel("Theta (rad)")
+            fig.supylabel("$B_z - B_{z, mean}$ (mT)")
+            fig.suptitle(f"Radial plots for z={self.z_values[data_num]}mm")
+            plt.show(block=False)
 
 
 # region slices
@@ -339,15 +325,13 @@ class YSlice(Slice):
         plt.xlabel("x (mm)")
         plt.ylabel("Field (T)")
         plt.show()
+
+
 # endregion
 
 
 def unpack_magmapper_data(filename):
     """Uses the appropriate classes to unpack the MagMapper data"""
-    # TODO: recalibrate hall sensor?, include z val in plots(only rel)
-    #  check sd and n too, esp old files,
-    #  return non-centered data at end?,
-    #  checks to make sure data is good(as expected)
     dataframe = pd.read_csv(filename, header=None)
     dataframe.dropna(axis=0, how="all", inplace=True)
     dataframe.dropna(axis=1, how="all", inplace=True)
@@ -365,7 +349,8 @@ def unpack_magmapper_data(filename):
             data = XSlice(filename, dataframe)
     return data
 
-# region rectangle
+
+# region make rectangle
 def make_rectangle(length):
     """Finds dimensions of a minimal rectangle
     (closest to square, with no empty rows/cols)
@@ -377,13 +362,29 @@ def make_rectangle(length):
         else:
             cols += 1
     return rows, cols
+
+
 # endregion
 
 
 def main():
     """Runs the whole boi"""
-    # Todo plot slices, const theta (opt for centering), 3d
-    #  check accuracy (sd and n, duplicates)
+    # TODO plot slices, const theta (opt for centering), 3d,
+    #  check accuracy (sd and n, duplicates),
+    #  add different order classes,
+    #  include z values in graphs/outputs,
+    #  pull out and verify/refine error checks,
+    #  check formatting of colour-bars,
+    #  change scaling of imshow so labels unnecessary,
+    #  test 200-sided shape with centering and constant theta,
+    #  check theta direction, location
+    #  check formatting many plots rot heatmap
+
+    # TODO? add plot_radial slice to rectangular data,
+    #  add nans for missing vals,
+    #  duplicate handling rectangular data,
+    #  recalibrate hall sensor,
+    #  return non-centered data at end
     filename1 = "Tims_measurements/C350_5/C350_5_N_rot(day)"
     data1 = unpack_magmapper_data(filename1)
     # data1.plot_heatmaps()
