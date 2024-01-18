@@ -15,8 +15,6 @@ HALL_INTERCEPT = -0.010254
 HALL_SLOPE = 1.14189
 MAX_GRAPHS = 8
 
-plt.rcParams.update({"polaraxes.grid": False})
-
 
 class MagMapperData:
     """Parent class to handle MagMapper data"""
@@ -28,7 +26,8 @@ class MagMapperData:
         self.dataframe["field"] = self.dataframe["field"] * field_sign
 
     def print_accuracy(self):
-        """Prints the accuracy of the data. Mean, std, min/max"""
+        """Prints the accuracy of the data. Mean, std, min/max.
+        Notably looking at duplicates and for high max std"""
         print(f"{self.filename}\n"
               f"Duplicates:\n{self.duplicated_measures}\n"
               f"Mean std: {np.mean(self.dataframe["std_field"]):.3e} T\n"
@@ -44,23 +43,22 @@ class MagMapperData:
         sum_amp_diffs_err = 0
         number_radii = 0
         for data_num, z_value_data in enumerate(self.split_data):
-            radii = pd.unique(z_value_data["r"])
-            for radius_idx, radius in enumerate(radii):
-                radial_data = z_value_data.loc[
-                    z_value_data["r"] == radius,
-                    ["field", "std_err_est"]]
-                sum_amp_diffs += (np.max(radial_data["field"]) -
-                                  np.min(radial_data["field"]))
-                sum_amp_diffs_err += radial_data["std_err_est"].iloc[
-                    np.argmax(radial_data["field"] + radial_data[
-                        "std_err_est"])]
-                sum_amp_diffs_err += radial_data["std_err_est"].iloc[
-                    np.argmin(radial_data["field"] + radial_data[
-                        "std_err_est"])]
-                number_radii += 1
             if "r" not in z_value_data.columns:
                 raise ValueError(f"{self.filename} data must be split by"
                                  f" radius\n")
+            radii = pd.unique(z_value_data["r"])
+            for radius_idx, radius in enumerate(radii):
+                field_data = z_value_data.loc[
+                    z_value_data["r"] == radius, "field"]
+                error_data = z_value_data.loc[
+                    z_value_data["r"] == radius, "std_err_est"]
+                sum_amp_diffs += np.max(field_data) - np.min(field_data)
+                error_1 = error_data.iloc[
+                    np.argmax(field_data + error_data)]
+                error_2 = error_data.iloc[
+                    np.argmin(field_data + error_data)]
+                sum_amp_diffs_err += np.sqrt(error_1 ** 2 + error_2 ** 2)
+                number_radii += 1
         inhomogeneity = unc.ufloat(sum_amp_diffs / number_radii,
                                    sum_amp_diffs_err / number_radii)
         inhomogeneity *= 1000
@@ -83,14 +81,14 @@ class OldXYZRectangularData(MagMapperData):
                                    * HALL_SLOPE + HALL_INTERCEPT)
         self.dataframe["std_field"] = (self.dataframe["std_volts"]
                                        * HALL_SLOPE)
+        self.dataframe["std_err_est"] = (self.dataframe["std_field"] /
+                                         np.sqrt(self.dataframe["n"]))
         self.rectify_field_direction()
         self.z_values = pd.unique(self.dataframe["z"])
-        self.split_data = []  # Potentially separate for performance
+        self.split_data = []  # Separate for performance/memory?
         for z_slice_num, z_value in enumerate(self.z_values):
             slice_data = self.dataframe.loc[
                 self.dataframe["z"] == z_value, ["x", "y", "field"]]
-            slice_data.rename(
-                columns={"field": f"field at z={z_value}mm"})  # reevaluate
             self.split_data.append(slice_data)
 
     @staticmethod
@@ -179,6 +177,11 @@ class OldXYZRectangularData(MagMapperData):
         print(f"{self.filename} contains data taken in a rectangular "
               f"format, which is not implemented for radial slices.")
 
+    def plot_theta_slice(self):
+        """Compatability with new data format"""
+        print(f"{self.filename} contains data taken in a rectangular "
+              f"format, which is not implemented for theta slices.")
+
 
 class NewRotationalData(MagMapperData):
     """Class to handle MagMapper data in the new rotational format,
@@ -198,19 +201,14 @@ class NewRotationalData(MagMapperData):
         self.dataframe["std_err_est"] = (self.dataframe["std_field"] /
                                          np.sqrt(self.dataframe["n"]))
         self.centre_xy()
-        # Could just be set to x
         self.dataframe["r"] = np.sqrt(
             self.dataframe["x"] ** 2 + self.dataframe["y"] ** 2)
-        # duplicates pulled first since pandas lacks a stable sort when
-        # sorting by multiple columns
+        # Separating duplicates for easy access
+        # Warning: order of data does matter for some methods
+        # (3d and radial) so sorting (or lack thereof) is done in them
         duplicated_mask = self.dataframe.duplicated(
             subset=["r", "theta", "z"], keep=False)
         self.duplicated_measures = self.dataframe.loc[duplicated_mask]
-        self.dataframe.drop_duplicates(subset=["r", "theta", "z"],
-                                       inplace=True)  # ----------sep
-        self.dataframe.sort_values(
-            ["z", "x", "theta"], axis=0, inplace=True,
-            ignore_index=True)
         self.split_data = []
         for z_value in self.z_values:
             slice_data = self.dataframe.loc[
@@ -220,14 +218,24 @@ class NewRotationalData(MagMapperData):
 
     def centre_xy(self):
         """With available data, centres the values around lowest
-        field change per theta"""
+        field change per theta.
+        Assumes a lot of stuff including that only one of x or y changes."""
         field_change_list = []
-        # y offset much more difficult to determine, taken as 0 for now
-        self.dataframe["y"] = 0
+        if len(pd.unique(self.dataframe["y"])) == 1:
+            changing_var = "x"
+            unchanging_var = "y"
+        elif len(pd.unique(self.dataframe["x"])) == 1:
+            changing_var = "y"
+            unchanging_var = "x"
+        else:
+            raise ValueError("Unknown data format.")  # ------------------
+        # unchanging_var offset much more difficult to determine,
+        # taken as 0 for now
+        self.dataframe[unchanging_var] = 0
         min_allowed_value = np.mean(self.dataframe["field"])
-        for x_radius in pd.unique(self.dataframe["x"]):
+        for x_radius in pd.unique(self.dataframe[changing_var]):
             radial_data = self.dataframe.loc[
-                self.dataframe["x"] == x_radius, ["field", "z"]]
+                self.dataframe[changing_var] == x_radius, ["field", "z"]]
             # Assumes negative z is closer to magnet
             slice1_radial_data = radial_data.loc[
                 radial_data["z"] == np.min(self.z_values), "field"]
@@ -239,7 +247,7 @@ class NewRotationalData(MagMapperData):
         field_change_arr = np.array(field_change_list)
         min_sum_idx = np.argmin(field_change_arr[:, 0])
         min_sum_x = field_change_arr[min_sum_idx, 1]
-        self.dataframe["x"] -= min_sum_x
+        self.dataframe[changing_var] -= min_sum_x
 
     @staticmethod
     def plot_heatmaps() -> None:
@@ -304,15 +312,18 @@ class NewRotationalData(MagMapperData):
             for radius_idx, radius in enumerate(radii):
                 current_axs = ax_arr[radius_idx]
                 current_axs: plt.axes
-                radial_data = z_value_data.loc[
-                    z_value_data["r"] == radius,
-                    ["theta", "field"]]
-                mean_centred_field = (radial_data["field"] - np.mean(
-                    radial_data["field"])) * 1000
-                current_axs.plot(radial_data["theta"],
-                                 mean_centred_field, "o-", markersize=2)
+                z_value_data.sort_values("theta", axis=0, inplace=True,
+                                         ignore_index=True)
+                field_data = z_value_data.loc[
+                    z_value_data["r"] == radius, "field"]
+                theta_data = z_value_data.loc[
+                    z_value_data["r"] == radius, "theta"]
+                mean_centred_field = (field_data -
+                                      np.mean(field_data)) * 1000
+                current_axs.plot(theta_data, mean_centred_field,
+                                 "o-", markersize=2)
                 current_axs.set_ylabel(f"r={radius:.2f}mm", rotation=0,
-                                       labelpad=30)
+                                       labelpad=30)  # -----
                 current_axs.yaxis.set_label_position("right")
             fig.supxlabel("Theta (rad)")
             fig.supylabel("$B_z - B_{z, mean}$ (mT)")
@@ -438,8 +449,12 @@ class YSlice(Slice):
 
 def unpack_magmapper_data(path):
     """Uses the appropriate classes to unpack the MagMapper data"""
-    dataframe = pd.read_csv(path, header=None)
     filename = path.split("\\")[-1]
+    try:
+        dataframe = pd.read_csv(path, header=None)
+    except UnicodeError:
+        print(f"{filename} is not a valid file.")
+        return
     dataframe.dropna(axis=0, how="all", inplace=True)
     dataframe.dropna(axis=1, how="all", inplace=True)
     num_names = len(dataframe.columns)
@@ -479,10 +494,11 @@ def make_rectangle(length):
 
 def main():
     """Runs the whole boi"""
-    # TODO fix 3d plot, math, skip dupes for 3d
+    # TODO:
     #  check full dupe measurements, check centering acc, 300micron rad mov
     #  pull out and verify/refine error checks, (tests)
     #  check formatting of colour-bars,
+    #  performance
     #  Tests?: check attributes of classes
     #  check bad data, check "known" data
 
@@ -497,16 +513,20 @@ def main():
     #                                involve multiple files)
     # return non-centered data at end (coordinates move) x
 
-    for path in glob.glob("**/*/C350_5*"):
+    for path in glob.glob("**/*/*PM1*", recursive=True):
+        # path = """C:/Users/twlln/Documents/RRI/MagMapper/
+        # Old_measurements/PM1/20221208_PM1_1,8"""
         data = unpack_magmapper_data(path)
+        if data is None:
+            continue
         # data.plot_3d()
-        # data.plot_radial_slice()
+        data.plot_radial_slice()
         # data.print_accuracy()
         # data.print_characteristic()
         if plt.gcf().get_axes():
             # plt.savefig(f"Plots/{data.filename}.pdf", format="pdf")
-            plt.show()
-            # plt.clf()
+            # plt.show()
+            plt.clf()
 
 
 if __name__ == "__main__":
