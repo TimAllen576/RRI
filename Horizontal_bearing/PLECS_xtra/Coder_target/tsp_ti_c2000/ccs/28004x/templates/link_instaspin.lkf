@@ -1,0 +1,36 @@
+/*
+   Copyright (c) 2020 by Plexim GmbH
+   All rights reserved.
+
+   A free license is granted to anyone to use this software for any legal
+   non safety-critical purpose, including commercial applications, provided
+   that:
+   1) IT IS NOT USED TO DIRECTLY OR INDIRECTLY COMPETE WITH PLEXIM, and
+   2) THIS COPYRIGHT NOTICE IS PRESERVED in its entirety.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+ */
+
+-m |>BIN_DIR<|/|>BASE_NAME<|.map
+--stack_size=0x300
+--warn_sections
+-i "|>CG_PATH<|/lib"
+-i "|>SRC_ROOT<|/../pil"
+-i "|>SRC_ROOT<|/../shrd"
+-i "|>SRC_ROOT<|/tisrc/fast"
+-l f28004x_fast_rom_symbols_fpu32.lib
+-l libc.a
+-l pil_c28.a
+-l shrdlib_c28.a
+--reread_libs
+--rom_model
+--entry_point=code_start
+"|>SRC_ROOT<|/app/f28004x_headers_nonbios.cmd"
+"|>SRC_ROOT<|/app/28004x_flash_lnk_instaspin.cmd"
+-o |>BIN_DIR<|/|>BASE_NAME<|.out

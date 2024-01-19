@@ -1,0 +1,569 @@
+--[[
+  Copyright (c) 2021 by Plexim GmbH
+  All rights reserved.
+
+  A free license is granted to anyone to use this software for any legal
+  non safety-critical purpose, incluEpwmg commercial applications, provided
+  that:
+  1) IT IS NOT USED TO DIRECTLY OR INDIRECTLY COMPETE WITH PLEXIM, and
+  2) THIS COPYRIGHT NOTICE IS PRESERVED in its entirety.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+--]] --
+local Module = {}
+
+local static = {
+  cbc_max_duty = 0.9,
+  numInstances = 0,
+  instances = {},
+  finalized = nil
+}
+
+function Module.getBlock(globals)
+
+  local EpwmBasicPcc = require('blocks.block').getBlock(globals)
+  EpwmBasicPcc["instance"] = static.numInstances
+  static.numInstances = static.numInstances + 1
+
+  function EpwmBasicPcc:checkMaskParameters(env)
+  end
+
+  function EpwmBasicPcc:getDirectFeedthroughCode()
+    local Require = ResourceList:new()
+    local InitCode = StringList:new()
+    local OutputSignal = StringList:new()
+    local OutputCode = StringList:new()
+
+    table.insert(static.instances, self.bid)
+
+    if #Block.InputSignal[1] ~= 1 then
+      return "Exactly one PWM generator must be configured."
+    end
+
+    self.pwm = Block.Mask.PwmUnit[1]
+    self.first_unit = self.pwm -- needed by ADC and CLA
+    local task_name = Block.Task["Name"]
+
+    -- carrier
+    self.fsw = Block.Mask.CarrierFreq
+
+    if Block.Mask.Type == 1 then
+      self.carrier_type = 'sawtooth'
+    else
+      self.carrier_type = 'triangle'
+    end
+
+    local timing = globals.target.getPwmFrequencySettings(self.fsw,
+                                                          self.carrier_type)
+    self.fsw_actual = timing.freq
+
+    -- accuracy of frequency settings
+    if Block.Mask.CarrierFreqTol == 1 then
+      local fc_rtol = 1e-6
+      local fc_atol = 1
+      local tol = self.fsw * fc_rtol
+      if tol < fc_atol then
+        tol = fc_atol
+      end
+      local fswError = self.fsw - self.fsw_actual
+      if math.abs(fswError) > tol then
+        local msg = [[
+            Unable to accurately achieve the desired PWM frequency:
+            - desired value: %f Hz
+            - closest achievable value: %f Hz
+
+            Please modify the frequency setting or change the "Frequency tolerance" parameter.
+            You may also adjust the system clock frequency under Coder Options->Target->General.
+            ]]
+        return msg % {self.fsw, self.fsw_actual}
+      end
+    end
+
+    self.dead_time = Block.Mask.Delay
+
+    -- polarity
+    if Block.Mask.Polarity == 1 then
+      self.polarity = 1
+    else
+      self.polarity = -1
+    end
+
+    -- sequence
+	self.sequence = 1
+
+    -- outmode
+    if Block.Mask.OutMode == 1 then
+      if globals.target.getFamilyPrefix() == '2837x' then
+        -- EPWM_AQ_TRIGGER_EVENT_TRIG_DC_EVTFILT not available for 2837x
+        -- therefore we need to use the TZ to implement CBC limiting
+        -- which does not lend itself well for controlling complementary outputs
+        return "Complementary outputs are not supported for this device." 
+      end
+      self.outmode = 'AB'
+    elseif Block.Mask.OutMode == 2 then
+      self.outmode = 'A'
+    else
+      self.outmode = ''
+    end
+
+    -- task trigger event
+    self.int_loc = ''
+    if Block.Mask.IntSel == 2 then
+      self.int_loc = 'z'
+    elseif Block.Mask.IntSel == 3 then
+      self.int_loc = 'p'
+    elseif Block.Mask.IntSel == 4 then
+      if self.carrier_type == 'sawtooth' then
+        return "Invalid task trigger event for sawtooth carrier"
+      end
+      if globals.target.getTargetParameters()['epwms']['type'] == 0 then
+        return "Dual task trigger events no supported by this chip."
+      end
+      self.int_loc = 'zp'
+    end
+
+    self.int_prd = 1
+    if Block.Mask.IntSelPeriod == Block.Mask.IntSelPeriod then -- checks if not nan
+      self.int_prd = Block.Mask.IntSelPeriod
+    end
+
+    -- ADC trigger event
+    self.soc_loc = ''
+    if Block.Mask.SocSel == 2 then
+      self.soc_loc = 'z'
+    elseif Block.Mask.SocSel == 3 then
+      self.soc_loc = 'p'
+    elseif Block.Mask.SocSel == 4 then
+      if self.carrier_type == 'sawtooth' then
+        return "Invalid ADC trigger event for sawtooth carrier"
+      end
+      if globals.target.getTargetParameters()['epwms']['type'] == 0 then
+        return "Dual ADC trigger events no supported by this chip."
+      end
+      self.soc_loc = 'zp'
+    end
+
+    self.soc_prd = 1
+    if Block.Mask.SocSelPeriod == Block.Mask.SocSelPeriod then -- checks if not nan
+      self.soc_prd = Block.Mask.SocSelPeriod
+    end
+
+    -- trip zone (trip generated by digital input)
+    self.trip_zone_settings = {}
+    for z = 1, 3 do
+      if Block.Mask['tz%imode' % {z}] == 2 then
+        self.trip_zone_settings[z] = 'cbc'
+      elseif Block.Mask['tz%imode' % {z}]  == 3 then
+        self.trip_zone_settings[z] = 'osht'
+      end
+    end
+
+    -- cycle-cycle limit
+    local pin
+    if Block.Mask.SenseInputType == 1 then
+        pin = '%s%i' % {
+          string.char(64 + Block.Mask.AdcUnit),
+          Block.Mask.AdcChannel
+        }
+    else
+       pin = 'PGA%i' % {Block.Mask.PgaUnit}
+    end
+    -- find comparator associated with selected analog input
+    local comps = globals.target.getTargetParameters()['comps']
+    if comps == nil then
+      return "Analog compare inputs are not supported by this target."
+    end
+    local comp = comps.positive[pin]
+    if comp == nil then
+      return "No comparator found for pin %s." % {pin}
+    end
+    -- find next available trip input
+    local tripInput = globals.target.getNextAvailableTripInput()
+    if tripInput == nil then
+      return "Maximal number of trip inputs exceeded."
+    end
+    -- calculate ramp decrement value
+    local dec = math.ceil(Block.Mask.RampSlope * Block.Mask.SenseGain / (3.3 / 65536 * Target.Variables.sysClkMHz * 1e6))
+    local actualRamp = dec / (Block.Mask.SenseGain / (3.3 / 65536 * Target.Variables.sysClkMHz * 1e6))
+    self:logLine('DAC decrement set to %i, resulting in ramp of %f A/s, desired was %f A/s.' % {dec, actualRamp, Block.Mask.RampSlope})
+    
+    -- create comparator instance
+    local comp_obj = self:makeBlock('comp')
+    comp_obj:createImplicit(comp[1], {
+        pin_mux = comp[2],
+        trip_in = tripInput,
+        ramp = {
+          sync_epwm_unit = Block.Mask.PwmUnit[1],
+          decrement_val = dec,
+          desired_ramp = Block.Mask.RampSlope,
+          actual_ramp = actualRamp,
+        }
+    }, Require)
+    self.cmp = comp[1]
+    self.cbc_trip_input = tripInput
+    self.cbc_min_duty = Block.Mask.LeadingEdgeBlanking * Block.Mask.CarrierFreq
+    if self.cbc_min_duty < 0 then
+      self.cbc_min_duty = 0
+    elseif self.cbc_min_duty >= static.cbc_max_duty then
+      return "Excessive leading edge blanking time."
+    end
+
+    -- create and configure epwm instance
+    self.epwm_obj = self:makeBlock("epwm")
+
+    local syncosel, phsen
+    if Block.Mask.EnablePhaseSyncFromDownstream ~= nil then
+      -- for R&D only
+      if Block.Mask.OverrideSyncoSelVal ~= nil then
+        syncosel = Block.Mask.OverrideSyncoSelVal
+      else
+        syncosel = 0
+      end
+      phsen = 1
+    end
+    local error = self.epwm_obj:createImplicit(self.pwm, {
+      fsw = self.fsw,
+      carrier_type = self.carrier_type,
+      polarity = self.polarity,
+      outmode = self.outmode,
+      sequence = self.sequence,
+      dead_time = self.dead_time,
+      trip_zone_settings = self.trip_zone_settings,
+      syncosel = syncosel,
+      phsen = phsen,
+      cbc_trip =  {
+      	input = self.cbc_trip_input,
+      	min_duty = self.cbc_min_duty
+      }
+    }, Require)
+
+    if type(error) == 'string' then
+      return error
+    end
+
+    self:logLine('EPWM implicitly created for channel %i, pwm %i.' %
+                       {self.instance, self.pwm})
+
+	-- output code and ouput signals
+    OutputCode:append("  PLXHAL_PWM_setDutyAndPeak(%i, %f, (%s+%ff)*%ff);" %
+                            {self.instance, static.cbc_max_duty,
+                            Block.InputSignal[1][1],
+                            Block.Mask.RampOffset,
+                            Block.Mask.SenseGain})
+
+    if (self.int_loc == '') then
+      OutputSignal:append("{}")
+    else
+      self.modTrigTs = 1 / (self.fsw_actual * #self.int_loc)
+      if self.int_prd ~= nil then
+        self.modTrigTs = self.modTrigTs * self.int_prd;
+      end
+      OutputSignal:append("{modtrig = {bid = %i}}" % {self:getId()})
+    end
+
+    if (self.soc_loc == '') then
+      OutputSignal:append("{}")
+    else
+      self.adcTrigTs = 1 / (self.fsw_actual * #self.soc_loc)
+      if self.soc_prd ~= nil then
+        self.adcTrigTs = self.adcTrigTs * self.soc_prd;
+      end
+      OutputSignal:append("{adctrig = {bid = %i}}" % {self:getId()})
+    end
+    
+    -- for R&D only
+    if Block.Mask.SynchronizationInput ~= nil then
+      local synci_top = Block.Mask.SynchronizationInput
+      synci_top = synci_top:gsub("%s+", "") -- remove whitespace
+      if synci_top:sub(1, #"{synco") ~= "{synco" then
+        return
+            ("'sycni' port must be connected to the 'sycni' port of another PWM (Variable) block or to the output of an External Sync block.")
+      end
+      local type = eval(synci_top)["synco"]["type"]
+      if type == 'pwm' then
+        local upmux = {}
+        upmux[1] = 0
+        upmux[4] = 1
+        upmux[7] = 2
+        upmux[10] = 3
+        self.epwm_obj:configureSyncSrc({
+          type = type,
+          unit = upmux[eval(synci_top)["synco"]["unit"]]
+        })
+      else
+        local gpio = eval(synci_top)["synco"]["unit"]
+        local error = globals.target.checkGpioIsValidPwmSync(gpio)
+        if error ~= nil then
+          return error
+        end
+        self.epwm_obj:configureSyncSrc({
+          type = type,
+          unit = gpio
+        })
+      end
+    end
+
+    return {
+      InitCode = InitCode,
+      OutputSignal = OutputSignal,
+      OutputCode = OutputCode,
+      Require = Require,
+      UserData = {bid = EpwmBasicPcc:getId()}
+    }
+  end
+
+  function EpwmBasicPcc:getNonDirectFeedthroughCode()
+    local Require = ResourceList:new()
+    local UpdateCode = StringList:new()
+
+    local enableCode = self.epwm_obj:getEnableCode()
+    if enableCode ~= nil then
+      UpdateCode:append(enableCode)
+    end
+
+    local powerstage_obj
+    for _, b in ipairs(globals.instances) do
+      if b:getType() == 'powerstage' then
+        powerstage_obj = b
+        break
+      end
+    end
+    
+    for zone, _ in pairs(self.trip_zone_settings) do
+      if powerstage_obj == nil then
+        return
+            'TZ%i protection requires the use of a Powerstage Protection block.' %
+                {zone}
+      end
+      if not powerstage_obj:isTripZoneConfigured(zone) then
+        if powerstage_obj:isDeprecated() then
+          return 'Please replace deprecated powerstage protection block.'
+        else 
+          return 'Please enable TZ%i under Coder Options -> Target -> Protections.' % {zone}
+        end
+      end
+    end
+
+    return {Require = Require, UpdateCode = UpdateCode}
+  end
+
+  function EpwmBasicPcc:setSinkForTriggerSource(sink)
+    if sink ~= nil then
+      self:logLine('EpwmBasicPcc connected to %s of %d' % {sink.type, sink.bid})
+      if self[sink.type] == nil then
+        self[sink.type] = {}
+      end
+      if sink.type == 'modtrig' then
+        local b = globals.instances[sink.bid]
+        local isr
+        if b:getType() == 'tasktrigger' then
+          isr = '%s_baseTaskInterrupt' % {Target.Variables.BASE_NAME}
+          self:logLine('Providing Task trigger')
+        else
+          -- CLA trigger
+        end
+         self.epwm_obj:configureInterruptEvents({
+          int_prd = self.int_prd,
+          int_loc = self.int_loc,
+          isr = isr
+        })
+      end
+      if sink.type == 'adctrig' then
+        self:logLine('Providing ADC trigger')
+        self.epwm_obj:configureSocEvents({
+          soc_prd = self.soc_prd,
+          soc_loc = self.soc_loc
+        })
+      end
+      table.insert(self[sink.type], globals.instances[sink.bid])
+    end
+  end
+
+  function EpwmBasicPcc:propagateTriggerSampleTime(ts)
+    if self['modtrig'] ~= nil then
+      for _, b in ipairs(self['modtrig']) do
+        local f = b:propagateTriggerSampleTime(self.modTrigTs)
+      end
+    end
+    if self['adctrig'] ~= nil then
+      for _, b in ipairs(self['adctrig']) do
+        local f = b:propagateTriggerSampleTime(self.adcTrigTs)
+      end
+    end
+  end
+
+  function EpwmBasicPcc:requestImplicitTrigger(ts)
+    if self.modTrigTs == nil then
+      -- offer best fit
+      if self.soc_loc ~= '' then
+        self.int_loc = self.soc_loc
+        self.int_prd = self.soc_prd
+      else
+        self.int_loc = 'z'
+        local pwmTs = 1 / (self.fsw_actual * #self.int_loc)
+        self.int_prd = math.max(1, math.floor(ts / pwmTs + 0.5))
+        self.int_prd = math.min(self.int_prd, globals.target
+                                    .getTargetParameters()['epwms']['max_event_period'])
+      end
+      self.modTrigTs = 1 / (self.fsw_actual * #self.int_loc) * self.int_prd
+    end
+    if self.adcTrigTs == nil then
+      -- same as interrupt
+      self.soc_prd = self.int_prd
+      self.soc_loc = self.int_loc
+      self.adcTrigTs = self.modTrigTs
+    end
+    self:logLine('Offered trigger generator at %f Hz' % {1 / self.modTrigTs})
+    return self.modTrigTs
+  end
+
+  function EpwmBasicPcc:finalizeThis(c)
+    local isModTrigger = false
+    if self['modtrig'] ~= nil then
+      for _, b in ipairs(self['modtrig']) do
+        if b:getType() == 'tasktrigger' then
+          isModTrigger = true
+          break
+        end
+      end
+    end
+
+    if isModTrigger == true then
+      itFunction = [[
+      interrupt void %s_baseTaskInterrupt(void)
+      {
+        EPwm%iRegs.ETCLR.bit.INT = 1;  // clear INT flag for this timer
+        PieCtrlRegs.PIEACK.all = PIEACK_GROUP3; // acknowledge interrupt to PIE
+    	IER |= M_INT3;
+        DISPR_dispatch();
+      }
+      ]]
+      c.Declarations:append("%s\n" %
+                                {
+            itFunction % {Target.Variables.BASE_NAME, self.pwm}
+          })
+      c.InterruptEnableCode:append('IER |= M_INT3;')
+    end
+
+    return c
+  end
+
+  function EpwmBasicPcc:finalize(c)
+    if static.finalized ~= nil then
+      return {}
+    end
+
+    -- generate lookup tables for epwm and comp handles
+    local epwmMap = {}
+    local cmpMap = {}
+    for _, bid in pairs(static.instances) do
+      local epwmBasicPcc = globals.instances[bid]
+      epwmMap[epwmBasicPcc:getParameter('instance')] = epwmBasicPcc:getParameter('epwm_obj'):getParameter('instance')
+      cmpMap[epwmBasicPcc:getParameter('instance')] = epwmBasicPcc:getParameter('cmp')
+    end
+
+    c.Declarations:append('const uint16_t EpwmPccLookup[%d] = {' %
+                              {static.numInstances})
+    local lookupS = ''
+    for i = 1, static.numInstances do
+      if i < static.numInstances then
+        lookupS = lookupS .. '%d,' % {epwmMap[i - 1]}
+      else
+        lookupS = lookupS .. '%d' % {epwmMap[i - 1]}
+      end
+    end
+    c.Declarations:append('%s' % {lookupS})
+    c.Declarations:append('};')
+
+    c.Declarations:append('const uint32_t EpwmPccCmpssLookup[%d] = {' %
+                              {static.numInstances})
+	lookupS = ''
+    for i = 1, static.numInstances do
+      local cmp = '0'
+      if cmpMap[i - 1] ~= nil then
+        cmp = 'CMPSS%i_BASE' % {cmpMap[i - 1]}
+      end
+      if i < static.numInstances then
+        lookupS = lookupS .. '%s, ' % {cmp}
+      else
+        lookupS = lookupS .. '%s' % {cmp}
+      end
+    end
+    c.Declarations:append('%s' % {lookupS})
+    c.Declarations:append('};')
+
+    c.Include:append('plx_pwm.h')
+
+    c.Declarations:append('extern PLX_PWM_Handle_t EpwmHandles[];')
+
+    local setPeakCurrentCode = [==[
+      void PLXHAL_PWM_setDutyAndPeak(uint16_t aHandle, float aDuty, float aPeak){
+        {
+          uint32_t base = EpwmPccCmpssLookup[aHandle];
+          if (base != 0)
+          {
+            float val = 65536.0 / 3.3 * aPeak;
+            uint32_t valInt = 0;
+            if (val > 0xFFFFFFFF)
+            {
+                valInt = 0xFFFFFFFF;
+            }
+            else if (val > 0)
+            {
+                valInt = (uint32_t)val;
+            }
+            if (valInt > 0xFFFF)
+            {
+                uint16_t decVal =  CMPSS_getRampDecValue(base);
+                if(decVal != 0)
+                {
+                    uint32_t rampDelay = (valInt-0xFFFF)/decVal;
+                    if (rampDelay > 0x1FFF)
+                    {
+                        rampDelay = 0x1FFF;
+                    }
+                    CMPSS_setRampDelayValue(base, (uint16_t)rampDelay);
+                }
+                valInt = 0xFFFF;
+            }
+            else
+            {
+            	 CMPSS_setRampDelayValue(base, 0x0000);     
+            }
+            CMPSS_setMaxRampValue(base, ((uint16_t)valInt));
+          }
+        }
+        if(aPeak <= 0)
+        {
+          PLX_PWM_setPwmDuty(EpwmHandles[EpwmPccLookup[aHandle]], 0);
+        }
+        else
+        {
+          PLX_PWM_setPwmDuty(EpwmHandles[EpwmPccLookup[aHandle]], aDuty);
+        }
+      }
+    ]==]
+    c.Declarations:append(setPeakCurrentCode)
+
+    for _, bid in pairs(static.instances) do
+      local epwmBasicPcc = globals.instances[bid]
+      local c = epwmBasicPcc:finalizeThis(c)
+      if type(c) == 'string' then
+        return c
+      end
+    end
+
+    static.finalized = true
+    return c
+  end
+
+  return EpwmBasicPcc
+end
+
+return Module

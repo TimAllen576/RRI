@@ -1,0 +1,36 @@
+/*
+   Copyright (c) 2019-2022 by Plexim GmbH
+   All rights reserved.
+
+   A free license is granted to anyone to use this software for any legal
+   non safety-critical purpose, including commercial applications, provided
+   that:
+   1) IT IS NOT USED TO DIRECTLY OR INDIRECTLY COMPETE WITH PLEXIM, and
+   2) THIS COPYRIGHT NOTICE IS PRESERVED in its entirety.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+ */
+
+--abi=eabi
+-m |>BIN_DIR<|/|>BASE_NAME<|.map
+--stack_size=0x300
+--rom_model
+--warn_sections
+-i "|>CG_PATH<|/lib"
+-i "|>SRC_ROOT<|/../pil"
+-i "|>SRC_ROOT<|/../shrd"
+-i "|>SRC_ROOT<|/tisrc/driverlib"
+-l libc.a
+-l pil_c28.a
+-l plx_driverlib.a
+|>LFLAGS<|
+--reread_libs
+"|>SRC_ROOT<|/app/f2838x_headers_nonBIOS_cpu1.cmd"
+"|>LINKER_CMD_FILE<|"
+-o |>BIN_DIR<|/|>BASE_NAME<|.out
