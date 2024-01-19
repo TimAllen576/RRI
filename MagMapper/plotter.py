@@ -371,8 +371,8 @@ class NewRotationalData(MagMapperData):
                 slice_data = self.split_data[ax_num]
                 r_values = pd.unique(slice_data["r"])
                 theta_values = pd.unique(slice_data["theta"])
-                r_samples = len(r_values)
-                theta_samples = len(theta_values)
+                # r_samples = len(r_values)
+                # theta_samples = len(theta_values)
                 # if r_samples * theta_samples != len(slice_data.index):
                 #     raise ValueError(f"Not all {r_samples} radius "
                 #                      f"samples have {theta_samples} "
@@ -445,8 +445,6 @@ class YSlice(Slice):
 
 
 # endregion
-
-
 def unpack_magmapper_data(path):
     """Uses the appropriate classes to unpack the MagMapper data"""
     filename = path.split("\\")[-1]
@@ -490,8 +488,6 @@ def make_rectangle(length):
 
 
 # endregion
-
-
 def main():
     """Runs the whole boi"""
     # TODO:

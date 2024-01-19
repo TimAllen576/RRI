@@ -1,0 +1,1045 @@
+Plecs {
+  Name          "TIC2000_Lib_Deprecated"
+  Version       "4.5"
+  ForwardingTable {{"TIC2000_Lib/CAN Port","TIC2000_Lib/CAN/CAN Port"},{"TIC20"
+"00_Lib/CAN Receive","TIC2000_Lib/CAN/CAN Receive"},{"TIC2000_Lib/CAN Transmit",""
+"TIC2000_Lib/CAN/CAN Transmit"},{"TIC2000_Lib/SPI Master","TIC2000_Lib/SPI/SPI"
+" Master"},{"TIC2000_Lib/SPI Slave","TIC2000_Lib/SPI/SPI Slave"}}
+  CircuitModel  "ContStateSpace"
+  StartTime     "0.0"
+  TimeSpan      "1.0"
+  Timeout       ""
+  Solver        "dopri"
+  MaxStep       "1e-3"
+  InitStep      "-1"
+  FixedStep     "1e-3"
+  Refine        "1"
+  ZCStepSize    "1e-9"
+  RelTol        "1e-3"
+  AbsTol        "-1"
+  TurnOnThreshold "0"
+  SyncFixedStepTasks "2"
+  UseSingleCommonBaseRate "2"
+  LossVariableLimitExceededMsg "3"
+  NegativeSwitchLossMsg "3"
+  DivisionByZeroMsg "3"
+  StiffnessDetectionMsg "2"
+  MaxConsecutiveZCs "1000"
+  AlgebraicLoopWithStateMachineMsg "3"
+  AssertionAction "1"
+  InitializationCommands ""
+  InitialState  "1"
+  SystemState   ""
+  TaskingMode   "1"
+  TaskConfigurations ""
+  CodeGenParameterInlining "2"
+  CodeGenFloatingPointFormat "2"
+  CodeGenAbsTimeUsageMsg "3"
+  CodeGenBaseName ""
+  CodeGenOutputDir ""
+  CodeGenExtraOpts ""
+  CodeGenTarget "Generic"
+  CodeGenTargetSettings ""
+  ExtendedMatrixPrecision "1"
+  MatrixSignificanceCheck "2"
+  EnableStateSpaceSplitting "2"
+  DisplayStateSpaceSplitting "1"
+  DiscretizationMethod "2"
+  ExternalModeSettings ""
+  AlgebraicLoopMethod "1"
+  AlgebraicLoopTolerance "1e-6"
+  ScriptsDialogGeometry ""
+  ScriptsDialogSplitterPos "0"
+  Terminal {
+    Type          Output
+    Index         "1"
+  }
+  Terminal {
+    Type          Output
+    Index         "1"
+  }
+  Schematic {
+    Location      [1264, 169; 1867, 945]
+    ZoomFactor    1
+    SliderPosition [0, 118]
+    ShowBrowser   off
+    BrowserWidth  100
+    Component {
+      Type          TargetCode
+      Name          "Powerstage"
+      Show          on
+      Position      [60, 40]
+      Direction     up
+      Flipped       off
+      Frame         [-45, -25; 45, 25]
+      LabelPosition [0, 28]
+      LabelAlign    up
+      TargetPortIndices "2"
+      SampleTime    "0"
+      EnforceBaseTask "1"
+      CodeFcnLang   "2"
+      CodeFcn       "local block = Target.Coder.CreateTargetBlock(\"TI C2000\""
+", \"powerstage\")\n"
+"\n"
+"return block:getDirectFeedthroughCode()"
+      MaskType      "Powerstage Protection"
+      MaskDescription "Provides powerstage safety features (deprecated)."
+      MaskHelp      "qthelp://com.plexim.c2000.1.0/doc/powerstage_protection_c"
+"2000.html"
+      MaskDisplay   "Icon:text('Powerstage\\nProtection')\n"
+"\n"
+"local function drawDecoration(color, text)\n"
+"  Icon:color(color[1], color[2], color[3])\n"
+"  local flipped = Block:get(\"Flipped\")\n"
+"  local direction = Block:get(\"Direction\")\n"
+"  local frame = Block:get(\"Frame\")\n"
+"  local xLeft = frame[1]\n"
+"  local xTot = frame[3]\n"
+"  local yUp = frame[2]\n"
+"  local yTot = frame[4]\n"
+"  local s1 = [[<b><i>]] .. string.sub(text,1,1) .. [[<i><b>]]\n"
+"  local s2 = [[<b><i>]] .. string.sub(text,2,2) .. [[<i><b>]]\n"
+"  local x, y, xT1, xT2, yT1, yT2, g, position\n"
+"  if direction == 0.0 then\n"
+"    x = -xLeft+yUp\n"
+"    y = xLeft-yUp\n"
+"    g = -1\n"
+"    if flipped then\n"
+"      xT1 = xLeft+4.5\n"
+"      yT1 = yUp+8\n"
+"      xT2 = xLeft+4.5\n"
+"      yT2 = yUp+13\n"
+"      position = 'upLeft'\n"
+"    else\n"
+"      xT1 = xLeft+4.5\n"
+"      yT1 = -yUp-8\n"
+"      xT2 = xLeft+4.5\n"
+"      yT2 = -yUp-13\n"
+"      position = 'upRight'\n"
+"    end\n"
+"  end\n"
+"  if direction == 0.25 then\n"
+"    x = 0\n"
+"    y = 0\n"
+"    g = 1\n"
+"    if flipped then\n"
+"      xT1 = -xLeft-8\n"
+"      yT1 = yUp+4.5\n"
+"      xT2 = -xLeft-13\n"
+"      yT2 = yUp+4.5\n"
+"      position = 'upRight'\n"
+"    else\n"
+"      xT1 = -xLeft-8\n"
+"      yT1 = -yUp-4.5\n"
+"      xT2 = -xLeft-13\n"
+"      yT2 = -yUp-4.5\n"
+"      position = 'lowRight'\n"
+"    end\n"
+"  end\n"
+"  if direction == 0.5 then\n"
+"    x = -xLeft+yUp\n"
+"    y = xLeft-yUp\n"
+"    g = -1\n"
+"    if flipped then\n"
+"      xT1 = -xLeft-4.5\n"
+"      yT1 = -yUp-8\n"
+"      xT2 = -xLeft-4.5\n"
+"      yT2 = -yUp-13\n"
+"      position = 'lowRight'\n"
+"    else\n"
+"      xT1 = -xLeft-4.5\n"
+"      yT1 = yUp+8\n"
+"      xT2 = -xLeft-4.5\n"
+"      yT2 = yUp+13\n"
+"      position = 'lowLeft'\n"
+"    end\n"
+"  end\n"
+"  if direction == 0.75 then\n"
+"    x = 0\n"
+"    y = 0\n"
+"    g = 1\n"
+"    if flipped then\n"
+"      xT1 = xLeft+8\n"
+"      yT1 = yUp+yTot-4.5\n"
+"      xT2 = xLeft+13\n"
+"      yT2 = yUp+yTot-4.5\n"
+"      position = 'lowLeft'\n"
+"    else\n"
+"      xT1 = xLeft+8\n"
+"      yT1 = yUp+4.5\n"
+"      xT2 = xLeft+13\n"
+"      yT2 = yUp+4.5\n"
+"      position = 'upLeft'\n"
+"    end\n"
+"  end \n"
+"  if position == 'upLeft' then\n"
+"    Icon:patch({xLeft+x,xLeft+16.9+x,xLeft+16.9+x,xLeft+5.55+x},{yUp+8+y,yUp+"
+"8+y,yUp+1+y,yUp+1+y})\n"
+"    Icon:color(0,0,0)\n"
+"    Icon:arc(xLeft+10+x,yUp+10+y,10,10,180,-90)\n"
+"    Icon:text(xT1, yT1, s1, 'FontSize', 9, 'TextFormat', 'RichText', 'Color',"
+" {255,255,255})\n"
+"    Icon:text(xT2, yT2, s2, 'FontSize', 9, 'TextFormat', 'RichText', 'Color',"
+" {255,255,255})\n"
+"  elseif position == 'upRight' then\n"
+"    Icon:patch({xLeft+xTot-16.9-x,xLeft+xTot-x,xLeft+xTot-5.55-x,xLeft+xTot-1"
+"6.9-x},{yUp+8+y,yUp+8+y,yUp+1+y,yUp+1+y})\n"
+"    Icon:color(0,0,0)\n"
+"    Icon:arc(xLeft+xTot-10-x,yUp+10+y,10,10,0,90)\n"
+"    Icon:text(g*(-xT2), g*yT2, s1, 'FontSize', 9, 'TextFormat', 'RichText', '"
+"Color', {255,255,255})\n"
+"    Icon:text(g*(-xT1), g*yT1, s2, 'FontSize', 9, 'TextFormat', 'RichText', '"
+"Color', {255,255,255})\n"
+"  elseif position == 'lowRight' then\n"
+"    Icon:patch({xLeft+xTot-16.9-x,xLeft+xTot-x,xLeft+xTot-5.55-x,xLeft+xTot-1"
+"6.9-x},{yUp+yTot-8-y,yUp+yTot-8-y,yUp+yTot-1-y,yUp+yTot-1-y})\n"
+"    Icon:color(0,0,0)\n"
+"    Icon:arc(xLeft+xTot-10-x,yUp+yTot-10-y,10,10,0,-90)\n"
+"    Icon:text(-xT2, -yT2, s1, 'FontSize', 9, 'TextFormat', 'RichText', 'Color"
+"', {255,255,255})\n"
+"    Icon:text(-xT1, -yT1, s2, 'FontSize', 9, 'TextFormat', 'RichText', 'Color"
+"', {255,255,255})\n"
+"  elseif position == 'lowLeft' then\n"
+"    Icon:patch({xLeft+x,xLeft+16.9+x,xLeft+16.9+x,xLeft+5.55+x},{yUp+yTot-8-y"
+",yUp+yTot-8-y,yUp+yTot-1-y,yUp+yTot-1-y})\n"
+"    Icon:color(0,0,0)\n"
+"    Icon:arc(xLeft+10+x,yUp+yTot-10-y,10,10,180,90)\n"
+"    Icon:text(g*xT1, -yT1*g, s1, 'FontSize', 9, 'TextFormat', 'RichText', 'Co"
+"lor', {255,255,255})\n"
+"    Icon:text(g*xT2, -yT2*g, s2, 'FontSize', 9, 'TextFormat', 'RichText', 'Co"
+"lor', {255,255,255})\n"
+"  end\n"
+"end\n"
+"\n"
+"local function drawDeprecate(color)\n"
+"  local frame = Block:get(\"Frame\")\n"
+"  local xLeft = frame[1]\n"
+"  local xTot = frame[3]\n"
+"  local yUp = frame[2]\n"
+"  local yTot = frame[4]\n"
+"  \n"
+"  Icon:color(color[1], color[2], color[3])\n"
+"  Icon:line({xLeft+10, xLeft+xTot-10}, {yUp+yTot-10, yUp+10})\n"
+"end\n"
+"\n"
+"drawDecoration({128,128,128}, 'TI')\n"
+"drawDeprecate({128,128,128})"
+      MaskDisplayLang "2"
+      MaskIconFrame on
+      MaskIconOpaque off
+      MaskIconRotates off
+      MaskInit      "IsDeprecated = 1;\n"
+"\n"
+"if en == 1\n"
+"\tif numel(gpio) ~= 1 || ~isvector(gpio) ...\n"
+"   || any(floor(gpio) ~= gpio) || any(gpio < 0),\n"
+"   \terror('\"Powerstage Enable GPIO number\" must be a scalar positive integ"
+"er.');\n"
+"\tend\n"
+"\tpolarity = pol;\n"
+"else\n"
+"\tpolarity = 1; % dummy value\n"
+"end\n"
+"\n"
+"if numel(pwmsafe) ~= 1,\n"
+"  error('\"PWM safe state\" must be scalar.');\n"
+"end\n"
+"\n"
+"if ~isnan(tz1_gpio) && (numel(tz1_gpio) ~= 1 || ~isvector(tz1_gpio) ...\n"
+"   || any(floor(tz1_gpio) ~= tz1_gpio) || any(tz1_gpio < 0)),\n"
+"   error('\"TZ1 GPIO number\" must be a scalar positive integer.');\n"
+"end\n"
+"\n"
+"if ~isnan(tz2_gpio) && (numel(tz2_gpio) ~= 1 || ~isvector(tz2_gpio) ...\n"
+"   || any(floor(tz2_gpio) ~= tz2_gpio) || any(tz2_gpio < 0)),\n"
+"   error('\"TZ2 GPIO number\" must be a scalar positive integer.');\n"
+"end\n"
+"\n"
+"if ~isnan(tz3_gpio) && (numel(tz3_gpio) ~= 1 || ~isvector(tz3_gpio) ...\n"
+"   || any(floor(tz3_gpio) ~= tz3_gpio) || any(tz3_gpio < 0)),\n"
+"   error('\"TZ3 GPIO number\" must be a scalar positive integer.');\n"
+"end\n"
+"\n"
+"if sim_interlock == 2\n"
+"\ten0 = [1];\n"
+"else\n"
+"\ten0 = [];\n"
+"end\n"
+"\n"
+"EnableSignal = en;\n"
+"EnableSignalGpio = gpio;\n"
+"EnableSignalPolarity = pol;\n"
+"PwmSafeState = pwmsafe;\n"
+"\n"
+"\n"
+      MaskDialogCallback "local hasPsEnable = Dialog:get('en')=='1'\n"
+"\n"
+"Dialog:set('pol', 'Visible', hasPsEnable)\n"
+"Dialog:set('gpio', 'Visible', hasPsEnable)\n"
+"\n"
+"local parent = Block:get(\"Parent\")\n"
+"local blockName = Block:get(\"Name\")\n"
+"parent:showTerminal(\"%s\" % { blockName }, hasPsEnable)\n"
+"\n"
+      Parameter {
+        Variable      "en"
+        Prompt        "Powerstage enable signal"
+        Type          FixedText
+        PossibleValues {"Digital output", "None"}
+        Value         "1"
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "pol"
+        Prompt        "Powerstage enable polarity"
+        Type          FixedText
+        PossibleValues {"Active low", "Active high"}
+        Value         "1"
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "gpio"
+        Prompt        "Powerstage enable GPIO number"
+        Type          FreeText
+        Value         "0"
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "pwmsafe"
+        Prompt        "PWM safe state"
+        Type          FixedText
+        PossibleValues {"Forced inactive", "Floating"}
+        Value         "1"
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "tz1_gpio"
+        Prompt        "TZ1 GPIO number (leave empty for none)"
+        Type          FreeText
+        Value         ""
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "tz2_gpio"
+        Prompt        "TZ2 GPIO number (leave empty for none)"
+        Type          FreeText
+        Value         ""
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "tz3_gpio"
+        Prompt        "TZ3 GPIO number (leave empty for none)"
+        Type          FreeText
+        Value         ""
+        Show          off
+        Tunable       off
+        TabName       ""
+      }
+      Parameter {
+        Variable      "sim_interlock"
+        Prompt        "Interlock"
+        Type          FixedText
+        PossibleValues {"Do not simulate", "Simulate"}
+        Value         "1"
+        Show          off
+        Tunable       off
+        TabName       "Offline only"
+      }
+      Terminal {
+        Type          Input
+        Position      [-45, 0]
+        Direction     left
+      }
+      Terminal {
+        Type          Output
+        Position      [49, 0]
+        Direction     right
+      }
+      Schematic {
+        Location      [868, 221; 1920, 456]
+        ZoomFactor    1
+        SliderPosition [0, 0]
+        ShowBrowser   off
+        BrowserWidth  100
+        Component {
+          Type          TargetOutput
+          Name          "1"
+          Show          on
+          Position      [425, 60]
+          Direction     right
+          Flipped       off
+          Parameter {
+            Variable      "Width"
+            Value         "-1"
+            Show          off
+          }
+        }
+        Component {
+          Type          Input
+          Name          "en"
+          Show          on
+          Position      [95, 100]
+          Direction     right
+          Flipped       off
+          Parameter {
+            Variable      "Index"
+            Value         "1"
+            Show          on
+          }
+          Parameter {
+            Variable      "InitialOutput"
+            Value         "en0"
+            Show          off
+          }
+          Parameter {
+            Variable      "HasDirectFeedthrough"
+            Value         "2"
+            Show          off
+          }
+          Parameter {
+            Variable      "Width"
+            Value         "-1"
+            Show          off
+          }
+        }
+        Component {
+          Type          Output
+          Name          "Out1"
+          Show          off
+          Position      [425, 100]
+          Direction     right
+          Flipped       off
+          Parameter {
+            Variable      "Index"
+            Value         "2"
+            Show          on
+          }
+          Parameter {
+            Variable      "DataType"
+            Value         "10"
+            Show          off
+          }
+          Parameter {
+            Variable      "Width"
+            Value         "-1"
+            Show          off
+          }
+        }
+        Component {
+          Type          Memory
+          Name          "Memory"
+          Show          off
+          Position      [280, 100]
+          Direction     right
+          Flipped       off
+          Parameter {
+            Variable      "X0"
+            Value         "0"
+            Show          off
+          }
+        }
+        Component {
+          Type          ConfigurableSubsystem
+          Name          "Interlock"
+          Show          on
+          Position      [190, 100]
+          Direction     up
+          Flipped       off
+          Frame         [-25, -15; 25, 15]
+          LabelPosition [0, 18]
+          LabelAlign    up
+          SampleTime    "-1"
+          CodeGenDiscretizationMethod "2"
+          CodeGenTarget "Generic"
+          MaskDisplayLang "2"
+          MaskIconFrame on
+          MaskIconOpaque off
+          MaskIconRotates on
+          Terminal {
+            Type          Input
+            Position      [-25, 0]
+            Direction     left
+          }
+          Terminal {
+            Type          Output
+            Position      [29, 0]
+            Direction     right
+          }
+          TerminalNames { "In1", "Out1" }
+          Location      [594, 86; 1035, 284]
+          ZoomFactor    1
+          SliderPosition [0, 0]
+          ShowBrowser   off
+          BrowserWidth  100
+          Configurations {
+            Name          "Disabled"
+            Schematic {
+              Component {
+                Type          Input
+                Name          "In1"
+                Show          off
+                Position      [100, 95]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "1"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Component {
+                Type          Output
+                Name          "Out1"
+                Show          off
+                Position      [325, 95]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "2"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Connection {
+                Type          Signal
+                SrcComponent  "In1"
+                SrcTerminal   1
+                DstComponent  "Out1"
+                DstTerminal   1
+              }
+            }
+            Name          "Enabled"
+            Schematic {
+              Component {
+                Type          Input
+                Name          "In1"
+                Show          off
+                Position      [100, 95]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "1"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Component {
+                Type          Output
+                Name          "Out1"
+                Show          off
+                Position      [325, 95]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "2"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Component {
+                Type          FsmBlock
+                Name          "Interlock"
+                Show          on
+                Position      [210, 95]
+                Direction     up
+                Flipped       off
+                Frame         [-55, -15; 55, 15]
+                LabelPosition [0, 18]
+                LabelAlign    up
+                Parameter {
+                  Variable      "InputVariables"
+                  Value         "en"
+                  Show          off
+                }
+                Parameter {
+                  Variable      "InputTypes"
+                  Value         "1"
+                  Show          off
+                }
+                Parameter {
+                  Variable      "InternalConstants"
+                  Value         ""
+                  Show          off
+                }
+                Parameter {
+                  Variable      "InternalConstantValues"
+                  Value         ""
+                  Show          off
+                }
+                Parameter {
+                  Variable      "InternalVariables"
+                  Value         ""
+                  Show          off
+                }
+                Parameter {
+                  Variable      "InternalVariableValues"
+                  Value         ""
+                  Show          off
+                }
+                Parameter {
+                  Variable      "OutputVariables"
+                  Value         "enabled"
+                  Show          off
+                }
+                Parameter {
+                  Variable      "Declarations"
+                  Value         ""
+                  Show          off
+                }
+                Parameter {
+                  Variable      "TransitionOrder"
+                  Value         "2"
+                  Show          off
+                }
+                Parameter {
+                  Variable      "SampleTime"
+                  Value         "0"
+                  Show          off
+                }
+                Parameter {
+                  Variable      "Animate"
+                  Value         "1"
+                  Show          off
+                }
+                FSM {
+                  Location       [1403, 635; 1920, 1005]
+                  ZoomFactor     1
+                  SliderPosition [0, 0]
+                  FsmState {
+                    Name          "Powerup"
+                    Position      [250, 120]
+                    Frame         [-90, -60; 90, 60]
+                    Parameter {
+                      Name     "EnterAction"
+                      Value    "enabled = 0;\n"
+                    }
+                    Parameter {
+                      Name     "DuringAction"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "ExitAction"
+                      Value    ""
+                    }
+                  }
+                  FsmState {
+                    Name          "Enabled"
+                    Position      [400, 280]
+                    Frame         [-90, -60; 90, 60]
+                    Parameter {
+                      Name     "EnterAction"
+                      Value    "enabled = 1;\n"
+                    }
+                    Parameter {
+                      Name     "DuringAction"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "ExitAction"
+                      Value    ""
+                    }
+                  }
+                  FsmState {
+                    Name          "Disabled"
+                    Position      [120, 280]
+                    Frame         [-90, -60; 90, 60]
+                    Parameter {
+                      Name     "EnterAction"
+                      Value    "enabled = 0;\n"
+                    }
+                    Parameter {
+                      Name     "DuringAction"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "ExitAction"
+                      Value    ""
+                    }
+                  }
+                  FsmState {
+                    Name          ".PointState"
+                    Position      [220, 20]
+                  }
+                  FsmTransition {
+                    FsmSrcInfo {
+                      StatePath        "Powerup"
+                      TerminalLoc      left
+                      TerminalCoord    0.634615
+                      External         on
+                    }
+                    FsmDstInfo {
+                      StatePath        "Disabled"
+                      TerminalLoc      top
+                      TerminalCoord    0.408537
+                      External         on
+                    }
+                    SegmentLengths      []
+                    LabelPosition       2.75
+                    Parameter {
+                      Name     "Trigger"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Condition"
+                      Value    "en == 0"
+                    }
+                    Parameter {
+                      Name     "Action"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Priority"
+                      Value    "1"
+                    }
+                  }
+                  FsmTransition {
+                    FsmSrcInfo {
+                      StatePath        "Disabled"
+                      TerminalLoc      right
+                      TerminalCoord    0.269231
+                      External         on
+                    }
+                    FsmDstInfo {
+                      StatePath        "Enabled"
+                      TerminalLoc      left
+                      TerminalCoord    0.269231
+                      External         on
+                    }
+                    SegmentLengths      []
+                    LabelPosition       0.5
+                    Parameter {
+                      Name     "Trigger"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Condition"
+                      Value    "en == 1"
+                    }
+                    Parameter {
+                      Name     "Action"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Priority"
+                      Value    "1"
+                    }
+                  }
+                  FsmTransition {
+                    FsmSrcInfo {
+                      StatePath        "Enabled"
+                      TerminalLoc      left
+                      TerminalCoord    0.740385
+                      External         on
+                    }
+                    FsmDstInfo {
+                      StatePath        "Disabled"
+                      TerminalLoc      right
+                      TerminalCoord    0.740385
+                      External         on
+                    }
+                    SegmentLengths      []
+                    LabelPosition       0.5
+                    Parameter {
+                      Name     "Trigger"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Condition"
+                      Value    "en == 0"
+                    }
+                    Parameter {
+                      Name     "Action"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Priority"
+                      Value    "1"
+                    }
+                  }
+                  FsmTransition {
+                    FsmSrcInfo {
+                      StatePath        ".PointState"
+                      TerminalLoc      bottom
+                      TerminalCoord    0.5
+                      External         on
+                    }
+                    FsmDstInfo {
+                      StatePath        "Powerup"
+                      TerminalLoc      top
+                      TerminalCoord    0.463415
+                      External         on
+                    }
+                    SegmentLengths      []
+                    LabelPosition       0.5
+                    Parameter {
+                      Name     "Trigger"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Condition"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Action"
+                      Value    ""
+                    }
+                    Parameter {
+                      Name     "Priority"
+                      Value    "1"
+                    }
+                  }
+                }
+              }
+              Connection {
+                Type          Signal
+                SrcComponent  "In1"
+                SrcTerminal   1
+                DstComponent  "Interlock"
+                DstTerminal   2
+              }
+              Connection {
+                Type          Signal
+                SrcComponent  "Interlock"
+                SrcTerminal   1
+                DstComponent  "Out1"
+                DstTerminal   1
+              }
+            }
+          }
+          Parameter {
+            Variable      "Configuration"
+            Value         "sim_interlock"
+            Show          off
+          }
+        }
+        Component {
+          Type          ConfigurableSubsystem
+          Name          "Polarity"
+          Show          on
+          Position      [360, 60]
+          Direction     up
+          Flipped       off
+          Frame         [-15, -15; 15, 15]
+          LabelPosition [0, 18]
+          LabelAlign    up
+          SampleTime    "-1"
+          CodeGenDiscretizationMethod "2"
+          CodeGenTarget "Generic"
+          MaskDisplayLang "2"
+          MaskIconFrame on
+          MaskIconOpaque off
+          MaskIconRotates on
+          Terminal {
+            Type          Input
+            Position      [-15, 0]
+            Direction     left
+          }
+          Terminal {
+            Type          Output
+            Position      [19, 0]
+            Direction     right
+          }
+          TerminalNames { "In1", "Out1" }
+          Location      [68, 594; 509, 792]
+          ZoomFactor    1
+          SliderPosition [0, 0]
+          ShowBrowser   off
+          BrowserWidth  100
+          Configurations {
+            Name          "Active Low"
+            Schematic {
+              Component {
+                Type          Input
+                Name          "In1"
+                Show          off
+                Position      [140, 80]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "1"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Component {
+                Type          Output
+                Name          "Out1"
+                Show          off
+                Position      [300, 80]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "2"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Component {
+                Type          LogicalOperator
+                Name          "Logical\nOperator"
+                Show          off
+                Position      [215, 80]
+                Direction     up
+                Flipped       off
+                Parameter {
+                  Variable      "Operator"
+                  Value         "6"
+                  Show          off
+                }
+                Parameter {
+                  Variable      "Inputs"
+                  Value         "2"
+                  Show          off
+                }
+              }
+              Connection {
+                Type          Signal
+                SrcComponent  "In1"
+                SrcTerminal   1
+                DstComponent  "Logical\nOperator"
+                DstTerminal   2
+              }
+              Connection {
+                Type          Signal
+                SrcComponent  "Logical\nOperator"
+                SrcTerminal   1
+                DstComponent  "Out1"
+                DstTerminal   1
+              }
+            }
+            Name          "Active High"
+            Schematic {
+              Component {
+                Type          Input
+                Name          "In1"
+                Show          off
+                Position      [140, 80]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "1"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Component {
+                Type          Output
+                Name          "Out1"
+                Show          off
+                Position      [300, 80]
+                Direction     right
+                Flipped       off
+                Parameter {
+                  Variable      "Index"
+                  Value         "2"
+                  Show          on
+                }
+                Parameter {
+                  Variable      "Width"
+                  Value         "-1"
+                  Show          off
+                }
+              }
+              Connection {
+                Type          Signal
+                SrcComponent  "In1"
+                SrcTerminal   1
+                DstComponent  "Out1"
+                DstTerminal   1
+              }
+            }
+          }
+          Parameter {
+            Variable      "Configuration"
+            Value         "polarity"
+            Show          off
+          }
+        }
+        Connection {
+          Type          Signal
+          SrcComponent  "en"
+          SrcTerminal   1
+          DstComponent  "Interlock"
+          DstTerminal   1
+        }
+        Connection {
+          Type          Signal
+          SrcComponent  "Interlock"
+          SrcTerminal   2
+          DstComponent  "Memory"
+          DstTerminal   1
+        }
+        Connection {
+          Type          Signal
+          SrcComponent  "Memory"
+          SrcTerminal   2
+          Points        [310, 100]
+          Branch {
+            DstComponent  "Out1"
+            DstTerminal   1
+          }
+          Branch {
+            Points        [310, 60]
+            DstComponent  "Polarity"
+            DstTerminal   1
+          }
+        }
+        Connection {
+          Type          Signal
+          SrcComponent  "Polarity"
+          SrcTerminal   2
+          DstComponent  "1"
+          DstTerminal   1
+        }
+      }
+    }
+  }
+}
+DemoSignature "+4DTbfSJdeU2FGPxUB6DHVe3D51LaQbkupCODB5XHfE="

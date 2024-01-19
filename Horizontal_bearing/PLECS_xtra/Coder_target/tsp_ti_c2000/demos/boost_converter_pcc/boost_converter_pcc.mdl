@@ -1,0 +1,934 @@
+Model {
+  Name			  "boost_converter_pcc"
+  Version		  7.3
+  MdlSubVersion		  0
+  SavedCharacterEncoding  "windows-1252"
+  GraphicalInterface {
+    NumRootInports	    0
+    NumRootOutports	    0
+    ParameterArgumentNames  ""
+    ComputedModelVersion    "1.63"
+    NumModelReferences	    0
+    NumTestPointedSignals   0
+  }
+  ScopeRefreshTime	  0.035000
+  OverrideScopeRefreshTime on
+  DisableAllScopes	  off
+  DataTypeOverride	  "UseLocalSettings"
+  MinMaxOverflowLogging	  "UseLocalSettings"
+  MinMaxOverflowArchiveMode "Overwrite"
+  InitFcn		  "%Processor selection for I/O assignment\n%The chosen Target in the Coder Options window must match the s"
+  "elected MCU.\n%Set the variable 'type_evm' to the following strings to choose a specific target:\n\n  type_evm"
+  " = 'TI28379LP';  % TI28379D Delfino Launchpad\n% type_evm = 'TI280049C';  % TI280049C Piccolo Launchpad\n% type_evm "
+  "= 'TI28379CC';  % TI28379D Delfino Controlcard\n% type_evm = 'TI28388D';   % TI28388D Controlcard\n\n\n% Configure I"
+  "/O based on processor \nswitch (type_evm)\n		\n		case 'TI28379LP'\n		SysClkMHz = 190;\n	% Configuration for TI28379D"
+  " Launchpad\n	% on the controller side	\n		ADC_DSP_Io = 4;\n		ADC_DSP_Vdc = 5;\n		PWM_DSP_PWM = 1;\n		DO_DSP_LED = 34"
+  ";\n		DI_DSP_En = 124;\n		PWR_DSP_Power = 66;\n		SCI_DSP = [43, 42];\n		\n		case 'TI280049C'\n		SysClkMHz = 100;\n	% "
+  "Configuration for TI280049C Launchpad\n	% on the controller side	\n		ADC_DSP_Io = 3;\n		ADC_DSP_Vdc = 6;\n		PWM_DSP_"
+  "PWM = 6;\n		DO_DSP_LED = 34;\n		DI_DSP_En = 58;\n		PWR_DSP_Power = 56;\n		SCI_DSP = [28, 29];		\n		\n		case 'TI28379"
+  "CC'\n		SysClkMHz = 190;	\n	% Configuration for TI28379D Controlcard\n	% on the controller side\n	   ADC_DSP_Io = 2;\n"
+  "		ADC_DSP_Vdc = 3;\n		PWM_DSP_PWM = 1;\n		DO_DSP_LED = 34;\n		DI_DSP_En = 40;\n		PWR_DSP_Power = 39; \n		SCI_DSP = ["
+  "28, 29];\n		\n		case 'TI28388D'\n		SysClkMHz = 190;\n	% Configuration for TI28388D Controlcard\n	% on the controller"
+  " side\n	   ADC_DSP_Io = 2;\n		ADC_DSP_Vdc = 3;\n		PWM_DSP_PWM = 1;\n		DO_DSP_LED = 34;\n		DI_DSP_En = 40;\n		PWR_DSP"
+  "_Power = 39; \n		SCI_DSP = [28, 29];\n	\notherwise\n	error('Unknown evaluation module selection, please choose eithe"
+  "r ''TI28379LP'', ''TI280049C'', ''TI28379CC'' or ''TI28388D''.')\nend\n\n\n%Switching frequency\nfsw = 100e3;       "
+  "     % in Hz\nTs = 1/fsw;               % in seconds\nTs_ctrl = Ts;\n\n\n%Plant parameters\nVin = 20;               "
+  "    % input voltage in V\nVout = 50;                 % output voltage in V\nM = (Vout-Vin)/Vout;   % duty cycle\n\nC"
+  "out = 1.5e-5;            % output capacitance in F\nRc = 10e-3;                % ESR of the output capacitance in Oh"
+  "ms\nRload= 20;                 % load resistance in Ohms\nRshunt = 0.10;           % shunt resistance in Ohms\n\n%cr"
+  "itical value of inductance\nLcrit = 0.5*Rload*M*(1-M)^2*Ts;\nL = 1.5*Lcrit;               % inductance in H\n\n%Ramp"
+  " for peak current controller\nramp = (Vout-Vin)/L;\n\n%Current controller Ipk calculation in CCM	\nD = M;\nIpk = ((V"
+  "out/Rload)/(1-D)) + 0.5*((Vout*D*(1-D)*Ts)/L);\n\nSysClkHz = SysClkMHz*1e6;\nDACq = 3.3/65536;\nIpk_offset = ceil(ra"
+  "mp*(Rshunt/DACq)*(1/SysClkHz))*(D*Ts)*(SysClkHz)*(DACq/Rshunt);\n\n%Initial conditions\nVo_init = Vout;\nIL_init = ("
+  "(Vout/Rload)/(1-D));\n\n%Designing the voltage controller using K-factor method\nfc=1000;                       % cr"
+  "ossover frequency in Hz\nwc=2*pi*fc;                  % crossover frequency in rad\nPM =60;                        %"
+  " desired phase margin in degrees\n\n\n%Analytical calculation of the phase of the plant\ns= wc*1i;\n%Plant transfer "
+  "function\nGp = Rload*(1-D)*(1 - s*L/(Rload*(1-D)^2))*(1+s*Rc*Cout)/(2+s*Rload*Cout);\nph_sys = angle(Gp)*(180/pi);  "
+  "     % phase of the plant\n        \n\n%Calculate the phase boost required\nphboost = PM - ph_sys - 90;\n\n%Since th"
+  "e required phase boost is < 90 deg, a Type 2 controller is used\n%Gc = Kc/s*((1+s/wz)/(1+s/wp))\n%Calculating the po"
+  "les and zeroes\nk = tan((phboost/2+45)*pi/180);\nwz = wc/k;\nwp = k*wc;\n\n%Analytical calculation of the gain of th"
+  "e controller\nGc = 1/s*((1+s/wz)/(1+s/wp)) ;\nKc=1/abs(Gc*Gp);              % gain of the controller\n\n%Clear compl"
+  "ex numbers to eliminate warning messages\nclear('s','Gc','Gp');"
+  Created		  "Thu Sep 08 16:38:17 2005"
+  Creator		  "kris"
+  UpdateHistory		  "UpdateHistoryNever"
+  ModifiedByFormat	  "%<Auto>"
+  LastModifiedBy	  "manaswini"
+  ModifiedDateFormat	  "%<Auto>"
+  LastModifiedDate	  "Thu Feb 03 16:14:38 2022"
+  RTWModifiedTimeStamp	  565805678
+  ModelVersionFormat	  "1.%<AutoIncrement:63>"
+  ConfigurationManager	  "none"
+  SampleTimeColors	  off
+  SampleTimeAnnotations	  off
+  LibraryLinkDisplay	  "none"
+  WideLines		  off
+  ShowLineDimensions	  off
+  ShowPortDataTypes	  off
+  ShowLoopsOnError	  on
+  IgnoreBidirectionalLines off
+  ShowStorageClass	  off
+  ShowTestPointIcons	  on
+  ShowSignalResolutionIcons on
+  ShowViewerIcons	  on
+  SortedOrder		  off
+  ExecutionContextIcon	  off
+  ShowLinearizationAnnotations on
+  BlockNameDataTip	  off
+  BlockParametersDataTip  on
+  BlockDescriptionStringDataTip	off
+  ToolBar		  on
+  StatusBar		  on
+  BrowserShowLibraryLinks off
+  BrowserLookUnderMasks	  off
+  SimulationMode	  "normal"
+  LinearizationMsg	  "none"
+  Profile		  off
+  ParamWorkspaceSource	  "MATLABWorkspace"
+  AccelSystemTargetFile	  "accel.tlc"
+  AccelTemplateMakefile	  "accel_default_tmf"
+  AccelMakeCommand	  "make_rtw"
+  TryForcingSFcnDF	  off
+  RecordCoverage	  off
+  CovPath		  "/"
+  CovSaveName		  "covdata"
+  CovMetricSettings	  "dw"
+  CovNameIncrementing	  off
+  CovHtmlReporting	  on
+  covSaveCumulativeToWorkspaceVar on
+  CovSaveSingleToWorkspaceVar on
+  CovCumulativeVarName	  "covCumulativeData"
+  CovCumulativeReport	  off
+  CovReportOnPause	  on
+  CovModelRefEnable	  "Off"
+  CovExternalEMLEnable	  off
+  ExtModeBatchMode	  off
+  ExtModeEnableFloating	  on
+  ExtModeTrigType	  "manual"
+  ExtModeTrigMode	  "oneshot"
+  ExtModeTrigPort	  "1"
+  ExtModeTrigElement	  "any"
+  ExtModeTrigDuration	  1000
+  ExtModeTrigDurationFloating "auto"
+  ExtModeTrigHoldOff	  0
+  ExtModeTrigDelay	  0
+  ExtModeTrigDirection	  "rising"
+  ExtModeTrigLevel	  0
+  ExtModeArchiveMode	  "off"
+  ExtModeAutoIncOneShot	  off
+  ExtModeIncDirWhenArm	  off
+  ExtModeAddSuffixToVar	  off
+  ExtModeWriteAllDataToWs off
+  ExtModeArmWhenConnect	  off
+  ExtModeSkipDownloadWhenConnect off
+  ExtModeLogAll		  on
+  ExtModeAutoUpdateStatusClock off
+  BufferReuse		  on
+  ShowModelReferenceBlockVersion off
+  ShowModelReferenceBlockIO off
+  Array {
+    Type		    "Handle"
+    Dimension		    1
+    Simulink.ConfigSet {
+      $ObjectID		      7
+      Version		      "1.6.0"
+      Array {
+	Type			"Handle"
+	Dimension		8
+	Simulink.SolverCC {
+	  $ObjectID		  8
+	  Version		  "1.6.0"
+	  StartTime		  "0.0"
+	  StopTime		  "0.1"
+	  AbsTol		  "auto"
+	  FixedStep		  "auto"
+	  InitialStep		  "auto"
+	  MaxNumMinSteps	  "-1"
+	  MaxOrder		  5
+	  ZcThreshold		  "auto"
+	  ConsecutiveZCsStepRelTol "10*128*eps"
+	  MaxConsecutiveZCs	  "1000"
+	  ExtrapolationOrder	  4
+	  NumberNewtonIterations  1
+	  MaxStep		  "auto"
+	  MinStep		  "auto"
+	  MaxConsecutiveMinStep	  "1"
+	  RelTol		  "1e-3"
+	  SolverMode		  "Auto"
+	  Solver		  "ode45"
+	  SolverName		  "ode45"
+	  ShapePreserveControl	  "DisableAll"
+	  ZeroCrossControl	  "UseLocalSettings"
+	  ZeroCrossAlgorithm	  "Nonadaptive"
+	  AlgebraicLoopSolver	  "TrustRegion"
+	  SolverResetMethod	  "Fast"
+	  PositivePriorityOrder	  off
+	  AutoInsertRateTranBlk	  off
+	  SampleTimeConstraint	  "Unconstrained"
+	  InsertRTBMode		  "Whenever possible"
+	}
+	Simulink.DataIOCC {
+	  $ObjectID		  9
+	  Version		  "1.6.0"
+	  Decimation		  "1"
+	  ExternalInput		  "[t, u]"
+	  FinalStateName	  "xFinal"
+	  InitialState		  "xInitial"
+	  LimitDataPoints	  off
+	  MaxDataPoints		  "1000"
+	  LoadExternalInput	  off
+	  LoadInitialState	  off
+	  SaveFinalState	  off
+	  SaveCompleteFinalSimState off
+	  SaveFormat		  "Array"
+	  SaveOutput		  on
+	  SaveState		  off
+	  SignalLogging		  on
+	  InspectSignalLogs	  off
+	  SaveTime		  on
+	  ReturnWorkspaceOutputs  off
+	  StateSaveName		  "xout"
+	  TimeSaveName		  "tout"
+	  OutputSaveName	  "yout"
+	  SignalLoggingName	  "sigsOut"
+	  OutputOption		  "RefineOutputTimes"
+	  OutputTimes		  "[]"
+	  ReturnWorkspaceOutputsName "out"
+	  Refine		  "10"
+	}
+	Simulink.OptimizationCC {
+	  $ObjectID		  10
+	  Version		  "1.6.0"
+	  Array {
+	    Type		    "Cell"
+	    Dimension		    8
+	    Cell		    "BooleansAsBitfields"
+	    Cell		    "PassReuseOutputArgsAs"
+	    Cell		    "PassReuseOutputArgsThreshold"
+	    Cell		    "ZeroExternalMemoryAtStartup"
+	    Cell		    "ZeroInternalMemoryAtStartup"
+	    Cell		    "OptimizeModelRefInitCode"
+	    Cell		    "NoFixptDivByZeroProtection"
+	    Cell		    "UseSpecifiedMinMax"
+	    PropName		    "DisabledProps"
+	  }
+	  BlockReduction	  on
+	  BooleanDataType	  off
+	  ConditionallyExecuteInputs on
+	  InlineParams		  off
+	  InlineInvariantSignals  off
+	  OptimizeBlockIOStorage  on
+	  BufferReuse		  on
+	  EnhancedBackFolding	  off
+	  StrengthReduction	  off
+	  ExpressionFolding	  on
+	  EnableMemcpy		  on
+	  MemcpyThreshold	  64
+	  PassReuseOutputArgsAs	  "Structure reference"
+	  ExpressionDepthLimit	  128
+	  FoldNonRolledExpr	  on
+	  LocalBlockOutputs	  on
+	  RollThreshold		  5
+	  SystemCodeInlineAuto	  off
+	  StateBitsets		  off
+	  DataBitsets		  off
+	  UseTempVars		  off
+	  ZeroExternalMemoryAtStartup on
+	  ZeroInternalMemoryAtStartup on
+	  InitFltsAndDblsToZero	  on
+	  NoFixptDivByZeroProtection off
+	  EfficientFloat2IntCast  off
+	  EfficientMapNaN2IntZero on
+	  OptimizeModelRefInitCode off
+	  LifeSpan		  "inf"
+	  BufferReusableBoundary  on
+	  SimCompilerOptimization "Off"
+	  AccelVerboseBuild	  off
+	  EnforceIntegerDowncast  on
+	}
+	Simulink.DebuggingCC {
+	  $ObjectID		  11
+	  Version		  "1.6.0"
+	  RTPrefix		  "error"
+	  ConsistencyChecking	  "none"
+	  ArrayBoundsChecking	  "none"
+	  SignalInfNanChecking	  "none"
+	  SignalRangeChecking	  "none"
+	  ReadBeforeWriteMsg	  "UseLocalSettings"
+	  WriteAfterWriteMsg	  "UseLocalSettings"
+	  WriteAfterReadMsg	  "UseLocalSettings"
+	  AlgebraicLoopMsg	  "warning"
+	  ArtificialAlgebraicLoopMsg "warning"
+	  SaveWithDisabledLinksMsg "warning"
+	  SaveWithParameterizedLinksMsg	"none"
+	  CheckSSInitialOutputMsg on
+	  UnderspecifiedInitializationDetection	"Classic"
+	  MergeDetectMultiDrivingBlocksExec "none"
+	  CheckExecutionContextPreStartOutputMsg off
+	  CheckExecutionContextRuntimeOutputMsg	off
+	  SignalResolutionControl "TryResolveAllWithWarning"
+	  BlockPriorityViolationMsg "warning"
+	  MinStepSizeMsg	  "warning"
+	  TimeAdjustmentMsg	  "none"
+	  MaxConsecutiveZCsMsg	  "error"
+	  SolverPrmCheckMsg	  "none"
+	  InheritedTsInSrcMsg	  "warning"
+	  DiscreteInheritContinuousMsg "warning"
+	  MultiTaskDSMMsg	  "warning"
+	  MultiTaskCondExecSysMsg "none"
+	  MultiTaskRateTransMsg	  "error"
+	  SingleTaskRateTransMsg  "none"
+	  TasksWithSamePriorityMsg "warning"
+	  SigSpecEnsureSampleTimeMsg "warning"
+	  CheckMatrixSingularityMsg "none"
+	  IntegerOverflowMsg	  "warning"
+	  Int32ToFloatConvMsg	  "warning"
+	  ParameterDowncastMsg	  "error"
+	  ParameterOverflowMsg	  "error"
+	  ParameterUnderflowMsg	  "none"
+	  ParameterPrecisionLossMsg "warning"
+	  ParameterTunabilityLossMsg "warning"
+	  UnderSpecifiedDataTypeMsg "none"
+	  UnnecessaryDatatypeConvMsg "none"
+	  VectorMatrixConversionMsg "none"
+	  InvalidFcnCallConnMsg	  "error"
+	  FcnCallInpInsideContextMsg "Enable All"
+	  SignalLabelMismatchMsg  "none"
+	  UnconnectedInputMsg	  "warning"
+	  UnconnectedOutputMsg	  "warning"
+	  UnconnectedLineMsg	  "warning"
+	  SFcnCompatibilityMsg	  "none"
+	  UniqueDataStoreMsg	  "none"
+	  BusObjectLabelMismatch  "warning"
+	  RootOutportRequireBusObject "warning"
+	  AssertControl		  "UseLocalSettings"
+	  EnableOverflowDetection off
+	  ModelReferenceIOMsg	  "none"
+	  ModelReferenceVersionMismatchMessage "none"
+	  ModelReferenceIOMismatchMessage "none"
+	  ModelReferenceCSMismatchMessage "none"
+	  UnknownTsInhSupMsg	  "warning"
+	  ModelReferenceDataLoggingMessage "warning"
+	  ModelReferenceSymbolNameMessage "warning"
+	  ModelReferenceExtraNoncontSigs "error"
+	  StateNameClashWarn	  "warning"
+	  StrictBusMsg		  "ErrorLevel1"
+	  LoggingUnavailableSignals "error"
+	  BlockIODiagnostic	  "none"
+	}
+	Simulink.HardwareCC {
+	  $ObjectID		  12
+	  Version		  "1.6.0"
+	  ProdBitPerChar	  8
+	  ProdBitPerShort	  16
+	  ProdBitPerInt		  32
+	  ProdBitPerLong	  32
+	  ProdIntDivRoundTo	  "Undefined"
+	  ProdEndianess		  "Unspecified"
+	  ProdWordSize		  32
+	  ProdShiftRightIntArith  on
+	  ProdHWDeviceType	  "32-bit Generic"
+	  TargetBitPerChar	  8
+	  TargetBitPerShort	  16
+	  TargetBitPerInt	  32
+	  TargetBitPerLong	  32
+	  TargetShiftRightIntArith on
+	  TargetIntDivRoundTo	  "Undefined"
+	  TargetEndianess	  "Unspecified"
+	  TargetWordSize	  32
+	  TargetTypeEmulationWarnSuppressLevel 0
+	  TargetPreprocMaxBitsSint 32
+	  TargetPreprocMaxBitsUint 32
+	  TargetHWDeviceType	  "32-bit Generic"
+	  TargetUnknown		  on
+	  ProdEqTarget		  off
+	}
+	Simulink.ModelReferenceCC {
+	  $ObjectID		  13
+	  Version		  "1.6.0"
+	  UpdateModelReferenceTargets "IfOutOfDateOrStructuralChange"
+	  CheckModelReferenceTargetMessage "error"
+	  ModelReferenceNumInstancesAllowed "Multi"
+	  ModelReferencePassRootInputsByReference on
+	  ModelReferenceMinAlgLoopOccurrences off
+	}
+	Simulink.SFSimCC {
+	  $ObjectID		  14
+	  Version		  "1.6.0"
+	  SFSimEnableDebug	  on
+	  SFSimOverflowDetection  on
+	  SFSimEcho		  on
+	  SimBlas		  on
+	  SimUseLocalCustomCode	  off
+	  SimBuildMode		  "sf_incremental_build"
+	}
+	Simulink.RTWCC {
+	  $BackupClass		  "Simulink.RTWCC"
+	  $ObjectID		  15
+	  Version		  "1.6.0"
+	  Array {
+	    Type		    "Cell"
+	    Dimension		    9
+	    Cell		    "IncludeHyperlinkInReport"
+	    Cell		    "GenerateTraceInfo"
+	    Cell		    "GenerateTraceReport"
+	    Cell		    "GenerateTraceReportSl"
+	    Cell		    "GenerateTraceReportSf"
+	    Cell		    "GenerateTraceReportEml"
+	    Cell		    "GenerateWebview"
+	    Cell		    "GenerateCodeMetricsReport"
+	    Cell		    "GenerateCodeReplacementReport"
+	    PropName		    "DisabledProps"
+	  }
+	  SystemTargetFile	  "grt.tlc"
+	  TLCOptions		  ""
+	  GenCodeOnly		  off
+	  MakeCommand		  "make_rtw"
+	  GenerateMakefile	  on
+	  TemplateMakefile	  "grt_default_tmf"
+	  PostCodeGenCommand	  ""
+	  Description		  ""
+	  GenerateReport	  off
+	  SaveLog		  off
+	  RTWVerbose		  on
+	  RetainRTWFile		  off
+	  ProfileTLC		  off
+	  TLCDebug		  off
+	  TLCCoverage		  off
+	  TLCAssert		  off
+	  ProcessScriptMode	  "Default"
+	  ConfigurationMode	  "Optimized"
+	  ProcessScript		  ""
+	  ConfigurationScript	  ""
+	  ConfigAtBuild		  off
+	  RTWUseLocalCustomCode	  off
+	  RTWUseSimCustomCode	  off
+	  CustomSourceCode	  ""
+	  CustomHeaderCode	  ""
+	  CustomInclude		  ""
+	  CustomSource		  ""
+	  CustomLibrary		  ""
+	  CustomInitializer	  ""
+	  CustomTerminator	  ""
+	  IncludeHyperlinkInReport off
+	  LaunchReport		  off
+	  TargetLang		  "C"
+	  IncludeBusHierarchyInRTWFileBlockHierarchyMap	off
+	  IncludeERTFirstTime	  on
+	  GenerateTraceInfo	  off
+	  GenerateTraceReport	  off
+	  GenerateTraceReportSl	  off
+	  GenerateTraceReportSf	  off
+	  GenerateTraceReportEml  off
+	  GenerateCodeInfo	  off
+	  RTWCompilerOptimization "Off"
+	  RTWCustomCompilerOptimizations ""
+	  CheckMdlBeforeBuild	  "Off"
+	  Array {
+	    Type		    "Handle"
+	    Dimension		    2
+	    Simulink.CodeAppCC {
+	      $ObjectID		      16
+	      Version		      "1.6.0"
+	      Array {
+		Type			"Cell"
+		Dimension		21
+		Cell			"IgnoreCustomStorageClasses"
+		Cell			"IgnoreTestpoints"
+		Cell			"InsertBlockDesc"
+		Cell			"InsertPolySpaceComments"
+		Cell			"SFDataObjDesc"
+		Cell			"MATLABFcnDesc"
+		Cell			"SimulinkDataObjDesc"
+		Cell			"DefineNamingRule"
+		Cell			"SignalNamingRule"
+		Cell			"ParamNamingRule"
+		Cell			"InlinedPrmAccess"
+		Cell			"CustomSymbolStr"
+		Cell			"CustomSymbolStrGlobalVar"
+		Cell			"CustomSymbolStrType"
+		Cell			"CustomSymbolStrField"
+		Cell			"CustomSymbolStrFcn"
+		Cell			"CustomSymbolStrFcnArg"
+		Cell			"CustomSymbolStrBlkIO"
+		Cell			"CustomSymbolStrTmpVar"
+		Cell			"CustomSymbolStrMacro"
+		Cell			"ReqsInCode"
+		PropName		"DisabledProps"
+	      }
+	      ForceParamTrailComments off
+	      GenerateComments	      on
+	      IgnoreCustomStorageClasses on
+	      IgnoreTestpoints	      off
+	      IncHierarchyInIds	      off
+	      MaxIdLength	      31
+	      PreserveName	      off
+	      PreserveNameWithParent  off
+	      ShowEliminatedStatement off
+	      IncAutoGenComments      off
+	      SimulinkDataObjDesc     off
+	      SFDataObjDesc	      off
+	      IncDataTypeInIds	      off
+	      MangleLength	      1
+	      CustomSymbolStrGlobalVar "$R$N$M"
+	      CustomSymbolStrType     "$N$R$M_T"
+	      CustomSymbolStrField    "$N$M"
+	      CustomSymbolStrFcn      "$R$N$M$F"
+	      CustomSymbolStrBlkIO    "rtb_$N$M"
+	      CustomSymbolStrTmpVar   "$N$M"
+	      CustomSymbolStrMacro    "$R$N$M"
+	      DefineNamingRule	      "None"
+	      ParamNamingRule	      "None"
+	      SignalNamingRule	      "None"
+	      InsertBlockDesc	      off
+	      SimulinkBlockComments   on
+	      EnableCustomComments    off
+	      InlinedPrmAccess	      "Literals"
+	      ReqsInCode	      off
+	      UseSimReservedNames     off
+	    }
+	    Simulink.GRTTargetCC {
+	      $BackupClass	      "Simulink.TargetCC"
+	      $ObjectID		      17
+	      Version		      "1.6.0"
+	      Array {
+		Type			"Cell"
+		Dimension		17
+		Cell			"GeneratePreprocessorConditionals"
+		Cell			"IncludeMdlTerminateFcn"
+		Cell			"SupportNonFinite"
+		Cell			"SuppressErrorStatus"
+		Cell			"ERTCustomFileBanners"
+		Cell			"GenerateSampleERTMain"
+		Cell			"GenerateTestInterfaces"
+		Cell			"ModelStepFunctionPrototypeControlCompliant"
+		Cell			"SupportNonInlinedSFcns"
+		Cell			"PortableWordSizes"
+		Cell			"PurelyIntegerCode"
+		Cell			"SupportComplex"
+		Cell			"SupportAbsoluteTime"
+		Cell			"SupportContinuousTime"
+		Cell			"MultiInstanceERTCode"
+		Cell			"CPPClassGenCompliant"
+		Cell			"CombineOutputUpdateFcns"
+		PropName		"DisabledProps"
+	      }
+	      TargetFcnLib	      "ansi_tfl_tmw.mat"
+	      TargetLibSuffix	      ""
+	      TargetPreCompLibLocation ""
+	      TargetFunctionLibrary   "C89/C90 (ANSI)"
+	      UtilityFuncGeneration   "Auto"
+	      ERTMultiwordTypeDef     "System defined"
+	      ERTMultiwordLength      256
+	      MultiwordLength	      2048
+	      GenerateFullHeader      on
+	      GenerateSampleERTMain   off
+	      GenerateTestInterfaces  off
+	      ModelReferenceCompliant off
+	      ParMdlRefBuildCompliant on
+	      CompOptLevelCompliant   on
+	      IncludeMdlTerminateFcn  on
+	      CombineOutputUpdateFcns off
+	      SuppressErrorStatus     off
+	      ERTFirstTimeCompliant   off
+	      IncludeFileDelimiter    "Auto"
+	      ERTCustomFileBanners    off
+	      SupportAbsoluteTime     on
+	      LogVarNameModifier      "rt_"
+	      MatFileLogging	      on
+	      MultiInstanceERTCode    off
+	      SupportNonFinite	      on
+	      SupportComplex	      on
+	      PurelyIntegerCode	      off
+	      SupportContinuousTime   on
+	      SupportNonInlinedSFcns  on
+	      EnableShiftOperators    on
+	      ParenthesesLevel	      "Nominal"
+	      ModelStepFunctionPrototypeControlCompliant off
+	      CPPClassGenCompliant    off
+	      AutosarCompliant	      off
+	      UseMalloc		      off
+	      ExtMode		      off
+	      ExtModeStaticAlloc      off
+	      ExtModeTesting	      off
+	      ExtModeStaticAllocSize  1000000
+	      ExtModeTransport	      0
+	      ExtModeMexFile	      "ext_comm"
+	      ExtModeIntrfLevel	      "Level1"
+	      RTWCAPISignals	      off
+	      RTWCAPIParams	      off
+	      RTWCAPIStates	      off
+	      GenerateASAP2	      off
+	    }
+	    PropName		    "Components"
+	  }
+	}
+	PropName		"Components"
+      }
+      Name		      "Configuration"
+      ExtraOptions	      "-aEnforceIntegerDowncast=1 -aPrefixModelToSubsysFcnNames=1 "
+      CurrentDlgPage	      "Solver"
+      ConfigPrmDlgPosition    [ 210, 67, 1754, 646 ]  
+    }
+    PropName		    "ConfigurationSets"
+  }
+  Simulink.ConfigSet {
+    $PropName		    "ActiveConfigurationSet"
+    $ObjectID		    7
+  }
+  BlockDefaults {
+    ForegroundColor	    "black"
+    BackgroundColor	    "white"
+    DropShadow		    off
+    NamePlacement	    "normal"
+    FontName		    "Helvetica"
+    FontSize		    10
+    FontWeight		    "normal"
+    FontAngle		    "normal"
+    ShowName		    on
+    BlockRotation	    0
+    BlockMirror		    off
+  }
+  AnnotationDefaults {
+    HorizontalAlignment	    "center"
+    VerticalAlignment	    "middle"
+    ForegroundColor	    "black"
+    BackgroundColor	    "white"
+    DropShadow		    off
+    FontName		    "Helvetica"
+    FontSize		    10
+    FontWeight		    "normal"
+    FontAngle		    "normal"
+    UseDisplayTextAsClickCallback off
+  }
+  LineDefaults {
+    FontName		    "Helvetica"
+    FontSize		    9
+    FontWeight		    "normal"
+    FontAngle		    "normal"
+  }
+  BlockParameterDefaults {
+    Block {
+      BlockType		      Ground
+    }
+    Block {
+      BlockType		      S-Function
+      FunctionName	      "system"
+      SFunctionModules	      "''"
+      PortCounts	      "[]"
+      SFunctionDeploymentMode off
+    }
+    Block {
+      BlockType		      SubSystem
+      ShowPortLabels	      "FromPortIcon"
+      Permissions	      "ReadWrite"
+      PermitHierarchicalResolution "All"
+      TreatAsAtomicUnit	      off
+      CheckFcnCallInpInsideContextMsg off
+      SystemSampleTime	      "-1"
+      RTWFcnNameOpts	      "Auto"
+      RTWFileNameOpts	      "Auto"
+      RTWMemSecFuncInitTerm   "Inherit from model"
+      RTWMemSecFuncExecute    "Inherit from model"
+      RTWMemSecDataConstants  "Inherit from model"
+      RTWMemSecDataInternal   "Inherit from model"
+      RTWMemSecDataParameters "Inherit from model"
+      SimViewingDevice	      off
+      DataTypeOverride	      "UseLocalSettings"
+      MinMaxOverflowLogging   "UseLocalSettings"
+    }
+    Block {
+      BlockType		      Terminator
+    }
+  }
+  System {
+    Name		    "boost_converter_pcc"
+    Location		    [261, 52, 881, 570]
+    Open		    off
+    ModelBrowserVisibility  off
+    ModelBrowserWidth	    200
+    ScreenColor		    "white"
+    PaperOrientation	    "landscape"
+    PaperPositionMode	    "auto"
+    PaperType		    "usletter"
+    PaperUnits		    "inches"
+    TiledPaperMargins	    [0.500000, 0.500000, 0.500000, 0.500000]
+    TiledPageScale	    1
+    ShowPageBoundaries	    off
+    ZoomFactor		    "100"
+    ReportName		    "simulink-default.rpt"
+    Block {
+      BlockType		      SubSystem
+      Name		      "Circuit"
+      Ports		      []
+      Position		      [235, 94, 305, 166]
+      BackgroundColor	      "paleyellow"
+      CopyFcn		      "plecs('sl', 203);"
+      DeleteFcn		      "plecs('sl', 205);"
+      UndoDeleteFcn	      "plecs('sl', 206);"
+      LoadFcn		      "plecs('sl', 200);"
+      PreSaveFcn	      "plecs('sl', 211);"
+      PostSaveFcn	      "plecs('sl', 201);"
+      InitFcn		      "plecs('sl', 214);"
+      StartFcn		      "plecs('sl', 208);"
+      StopFcn		      "plecs('sl', 209);"
+      NameChangeFcn	      "plecs('sl', 210);"
+      ClipboardFcn	      "plecs('sl', 212, 24);"
+      DestroyFcn	      "plecs('sl', 207);"
+      PreCopyFcn	      "plecs('sl', 216);"
+      OpenFcn		      "plecs('sl', 202);"
+      ErrorFcn		      "plerrorfcn"
+      RequestExecContextInheritance off
+      MaskType		      "PlecsCircuit"
+      MaskDescription	      "Drag this block into a Simulink model to create a new electrical circuit."
+      MaskPromptString	      "PLECS Data (Do not delete or modify!)"
+      MaskStyleString	      "edit"
+      MaskVariables	      "PLECSData=&1;"
+      MaskTunableValueString  "on"
+      MaskEnableString	      "on"
+      MaskVisibilityString    "off"
+      MaskToolTipString	      "on"
+      MaskInitialization      "% PLACE CUSTOM INITIALIZATIONS ABOVE\n% DO NOT REMOVE\nplecs('sl', 215);\n% DO NOT REMO"
+      "VE"
+      MaskSelfModifiable      on
+      MaskDisplay	      "disp('PLECS\\nCircuit')\n"
+      MaskIconFrame	      on
+      MaskIconOpaque	      on
+      MaskIconRotate	      "none"
+      MaskPortRotate	      "default"
+      MaskIconUnits	      "autoscale"
+      MaskValueString	      "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"
+      System {
+	Name			"Circuit"
+	Location		[440, 52, 1386, 1824]
+	Open			off
+	ModelBrowserVisibility	off
+	ModelBrowserWidth	200
+	ScreenColor		"white"
+	PaperOrientation	"landscape"
+	PaperPositionMode	"auto"
+	PaperType		"usletter"
+	PaperUnits		"inches"
+	TiledPaperMargins	[0.500000, 0.500000, 0.500000, 0.500000]
+	TiledPageScale		1
+	ShowPageBoundaries	off
+	ZoomFactor		"100"
+	Block {
+	  BlockType		  SubSystem
+	  Name			  " CircuitID24 "
+	  Ports			  []
+	  Position		  [235, 15, 245, 25]
+	  RequestExecContextInheritance	off
+	  System {
+	    Name		    " CircuitID24 "
+	    Location		    [100, 100, 600, 900]
+	    Open		    off
+	    ModelBrowserVisibility  off
+	    ModelBrowserWidth	    200
+	    ScreenColor		    "white"
+	    PaperOrientation	    "landscape"
+	    PaperPositionMode	    "auto"
+	    PaperType		    "usletter"
+	    PaperUnits		    "inches"
+	    TiledPaperMargins	    [0.500000, 0.500000, 0.500000, 0.500000]
+	    TiledPageScale	    1
+	    ShowPageBoundaries	    off
+	    ZoomFactor		    "100"
+	  }
+	  RTWSystemCode		  "Auto"
+	  MinAlgLoopOccurrences	  off
+	  PropExecContextOutsideSubsystem off
+	  FunctionWithSeparateData off
+	  Opaque		  off
+	  MaskHideContents	  off
+	}
+	Block {
+	  BlockType		  Ground
+	  Name			  " GateMux "
+	  Position		  [155, 160, 175, 180]
+	}
+	Block {
+	  BlockType		  Ground
+	  Name			  " InputMux "
+	  Position		  [155, 95, 175, 115]
+	}
+	Block {
+	  BlockType		  Terminator
+	  Name			  " OutputDemux "
+	  Position		  [295, 95, 315, 115]
+	}
+	Block {
+	  BlockType		  Terminator
+	  Name			  " ProbeDemux "
+	  Position		  [295, 160, 315, 180]
+	}
+	Block {
+	  BlockType		  S-Function
+	  Name			  " S-Function "
+	  Ports			  [2, 2]
+	  Position		  [210, 120, 260, 160]
+	  FunctionName		  "plecs"
+	  EnableBusSupport	  off
+	}
+	Line {
+	  SrcBlock		  " InputMux "
+	  SrcPort		  1
+	  DstBlock		  " S-Function "
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  " GateMux "
+	  SrcPort		  1
+	  DstBlock		  " S-Function "
+	  DstPort		  2
+	}
+	Line {
+	  SrcBlock		  " S-Function "
+	  SrcPort		  1
+	  DstBlock		  " OutputDemux "
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  " S-Function "
+	  SrcPort		  2
+	  DstBlock		  " ProbeDemux "
+	  DstPort		  1
+	}
+      }
+      RTWSystemCode	      "Auto"
+      MinAlgLoopOccurrences   off
+      PropExecContextOutsideSubsystem off
+      FunctionWithSeparateData off
+      Opaque		      off
+      MaskHideContents	      off
+    }
+    Annotation {
+      Name		      "Boost Converter with Peak Current Control "
+      Position		      [285, 72]
+      FontSize		      14
+      FontWeight	      "bold"
+    }
+  }
+}

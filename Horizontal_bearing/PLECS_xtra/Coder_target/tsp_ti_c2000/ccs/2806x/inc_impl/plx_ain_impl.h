@@ -1,0 +1,70 @@
+/*
+   Copyright (c) 2014-2016 by Plexim GmbH
+   All rights reserved.
+
+   A free license is granted to anyone to use this software for any legal
+   non safety-critical purpose, including commercial applications, provided
+   that:
+   1) IT IS NOT USED TO DIRECTLY OR INDIRECTLY COMPETE WITH PLEXIM, and
+   2) THIS COPYRIGHT NOTICE IS PRESERVED in its entirety.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+ */
+
+#ifndef PLX_AIN_IMPL_H_
+#define PLX_AIN_IMPL_H_
+
+#define PLX_AIN_NUM_CHANNELS 16
+#define PLX_AIN_VOLTS_PER_ADC_BIT (3.3/4096.0)
+
+typedef enum PLX_AIN_UNIT {
+	PLX_AIN_ADC=0
+} PLX_AIN_Unit_t;
+
+typedef struct PLX_AIN_ADC_PARAMS {
+	union INTSEL1N2_REG INTSEL1N2;
+	union ADCCTL1_REG ADCCTL1;
+	union ADCCTL2_REG ADCCTL2;
+	union SOCPRICTL_REG	SOCPRICTL;
+} PLX_AIN_AdcParams_t;
+
+typedef struct PLX_AIN_CHANNEL_PARAMS {
+	union ADCSOCxCTL_REG ADCSOCxCTL;
+	float scale;
+	float offset;
+} PLX_AIN_ChannelParams_t;
+
+typedef struct PLX_AIN_OBJ
+{
+	volatile struct ADC_REGS *adc;
+	union ADCSOCxCTL_REG *socCtrl;
+	volatile uint16_t *results;
+	float scale[PLX_AIN_NUM_CHANNELS];
+	float offset[PLX_AIN_NUM_CHANNELS];
+} PLX_AIN_Obj_t;
+
+typedef PLX_AIN_Obj_t *PLX_AIN_Handle_t;
+
+extern void PLX_AIN_getRegisterBase(PLX_AIN_Unit_t aAdcUnit, volatile struct ADC_REGS** aReg);
+
+inline uint16_t PLX_AIN_getIn(PLX_AIN_Handle_t aHandle, uint16_t aChannel)
+{
+    PLX_AIN_Obj_t *obj = (PLX_AIN_Obj_t *)aHandle;
+
+    PLX_ASSERT(aChannel < PLX_AIN_NUM_CHANNELS);
+    return obj->results[aChannel];
+}
+
+inline float PLX_AIN_getInF(PLX_AIN_Handle_t aHandle, uint16_t aChannel)
+{
+    PLX_AIN_Obj_t *obj = (PLX_AIN_Obj_t *)aHandle;
+    return ((float)obj->results[aChannel] * obj->scale[aChannel] + obj->offset[aChannel]);
+}
+
+#endif /* PLX_AIN_IMPL_H_ */

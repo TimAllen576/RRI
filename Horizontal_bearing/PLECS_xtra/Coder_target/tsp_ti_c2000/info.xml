@@ -1,0 +1,769 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TargetSupportPackage xmlns="http://www.plexim.com/xml/codegentarget/" version="1.0">
+  <TargetFamily>TI C2000</TargetFamily>
+  <BlockLibrary file="TIC2000_Lib">TI C2000 Target</BlockLibrary>
+  <BlockLibrary file="TIC2000_Lib_Deprecated" show="false">TI C2000 Target Deprecated</BlockLibrary>
+  <MinPlecsVersion>4.6.0</MinPlecsVersion>
+  <ExternalTools>
+    <DirSelect prompt="TI codegen tools directory" variable="codegenDir" tab="General" />
+    <DirSelect prompt="TI Uniflash directory" variable="uniflashDir" tab="General" />
+  </ExternalTools>
+  <ExternalMode>
+    <Type>Serial</Type>
+    <Type>JTAG</Type>
+  </ExternalMode>
+  <Parameters>
+    <CheckBox prompt="Use data types for tunable parameters" variable="USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS" default="1" />
+  </Parameters>
+  <CodeFunction lang="Lua"><![CDATA[return require "Coder"]]></CodeFunction>
+  <BuildSteps>
+    <CopyFile>
+      <Source>$(TARGET_ROOT)/templates/gensrcs.mk</Source>
+      <Destination>$(BASE_NAME)_sources.mk</Destination>
+      <Replace>
+        <Before><![CDATA[|>SOURCE_FILES<|]]></Before>
+        <After>$(SOURCE_FILES)</After>
+      </Replace>
+    </CopyFile>
+    <Make description="Compile sources">
+      <Timeout>120</Timeout>
+      <Makefile>$(BASE_NAME).mk</Makefile>
+    </Make>
+    <Make description="Flash MCU">
+      <Condition variable="genOnly" relop="~=" value="1" />
+      <Timeout>120</Timeout>
+      <Makefile>$(BASE_NAME).mk</Makefile>
+      <Argument>download</Argument>
+    </Make>
+  </BuildSteps>
+  <Target help="c2000help.qch">
+    <Name>TI2806x</Name>
+    <Version>1.5.5</Version>
+    <MultiTasking NumCores="1" />
+    <Parameters>
+      <ComboBox prompt="Chip" variable="chip" default="1">
+        <Item>28069</Item>
+      </ComboBox>
+      <LineEdit prompt="System clock frequency (SYSCLK) [MHz]" variable="sysClkMHz" default="90" eval="true" tab="General" />
+      <CheckBox prompt="Use internal oscillator" variable="useIntOsc" default="1" tab="General" />
+      <LineEdit prompt="External clock frequency [MHz]" variable="extClkMHz" default="20" eval="true" tab="General" />
+      <ComboBox prompt="Step size tolerance" variable="taskFreqTol" default="1" tab="General">
+        <Item>Enforce exact value</Item>
+        <Item>Round to closest achievable value</Item>
+      </ComboBox>
+      <LineEdit prompt="Step size tolerance band [%]" variable="SampleTimeRelTol" default="10" tab="General" />
+
+      <ComboBox prompt="Build type" variable="genOnly" default="2">
+        <Item>Generate code into CCS project</Item>
+        <Item>Build and program</Item>
+      </ComboBox>
+
+      <ComboBox prompt="Build configuration" variable="buildConfig" default="1">
+        <Item>Run from Flash</Item>
+        <Item>Run from RAM</Item>
+        <Item>Custom linking</Item>
+      </ComboBox>
+      <FileSelect prompt="Linker command file" variable="LinkerCommandFile" default="" eval="false" tab="General" />
+      <DirSelect prompt="CCS project directory" variable="installDir" default="" eval="false" tab="General" />
+
+      <ComboBox prompt="Board" variable="board" default="1">
+         <!--list must match definition in TI2806x.lua -->
+        <Item>Custom</Item>
+        <Item>LaunchPad</Item>
+        <Item>ControlCard</Item>
+      </ComboBox>
+      <FileSelect prompt="Uniflash target configuration" variable="uniflashFile" default="" eval="false" tab="General" filters="Target configuration (*.ccxml)" />
+
+      <CheckBox prompt="Enable TZ 1" variable="Tz1Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 1 GPIO" variable="Tz1Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 2" variable="Tz2Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 2 GPIO" variable="Tz2Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 3" variable="Tz3Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 3 GPIO" variable="Tz3Gpio" default="0" eval="true" tab="Protections" />
+
+      <ExtModeSelect tab="External Mode" />
+      <LineEdit prompt="Target buffer size" variable="extModeBufferSize" default="1000" eval="true" tab="External Mode" />
+      <LineEdit prompt="GPIO [Rx,Tx]" variable="extModeSciPins" default="[28, 29]" eval="true" tab="External Mode" />
+
+      <CheckBox prompt="Check for updates at build" variable="CheckForUpdates" default="1" tab="Updates" />
+    </Parameters>
+    <DialogCallback><![CDATA[
+      Dialog:set('USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS', 'Visible', false)
+
+      Dialog:set('extClkMHz', 'Visible', Dialog:get('useIntOsc') == '0')
+      Dialog:set('SampleTimeRelTol', 'Visible', Dialog:get('taskFreqTol') == '2')
+      Dialog:set('LinkerCommandFile', 'Visible', (Dialog:get('buildConfig') == '3') and (Dialog:get('genOnly') ~= '1'))
+      Dialog:set('installDir', 'Visible', Dialog:get('genOnly') == '1')
+      Dialog:set('board', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('uniflashFile', 'Visible', (Dialog:get('genOnly') ~= '1') and (Dialog:get('board') == '1'))
+      Dialog:set('buildConfig', 'Visible', Dialog:get('genOnly') ~= '1')
+      
+      for i=1,3 do
+        Dialog:set('Tz%iGpio' % {i}, 'Visible', Dialog:get('Tz%iEnable' % {i}) == '1')
+      end
+
+      Dialog:set('extModeBufferSize', 'Visible', Dialog:get('EXTERNAL_MODE') ~= '0')
+      Dialog:set('extModeSciPins', 'Visible', Dialog:get('EXTERNAL_MODE') == '1')
+      ]]>
+    </DialogCallback>
+  </Target>
+  <Target help="c2000help.qch">
+    <Name>TI28004x</Name>
+    <Version>1.5.5</Version>
+    <MultiTasking NumCores="1" />
+    <Parameters>
+      <ComboBox prompt="Chip" variable="chip" default="1">
+        <Item>280049</Item>
+      </ComboBox>
+      <LineEdit prompt="System clock frequency (SYSCLK) [MHz]" variable="sysClkMHz" default="100" eval="true" tab="General" />
+      <CheckBox prompt="Use internal oscillator" variable="useIntOsc" default="1" tab="General" />
+      <LineEdit prompt="External clock frequency [MHz]" variable="extClkMHz" default="20" eval="true" tab="General" />
+      <ComboBox prompt="Step size tolerance" variable="taskFreqTol" default="1" tab="General">
+        <Item>Enforce exact value</Item>
+        <Item>Round to closest achievable value</Item>
+      </ComboBox>
+      <LineEdit prompt="Step size tolerance band [%]" variable="SampleTimeRelTol" default="10" tab="General" />
+
+      <ComboBox prompt="Build type" variable="genOnly" default="2">
+        <Item>Generate code into CCS project</Item>
+        <Item>Build and program</Item>
+      </ComboBox>
+
+      <ComboBox prompt="Build configuration" variable="buildConfig" default="1">
+        <Item>Run from Flash</Item>
+        <Item>Run from RAM</Item>
+        <Item>Custom linking</Item>
+      </ComboBox>
+      <FileSelect prompt="Linker command file" variable="LinkerCommandFile" default="" eval="false" tab="General" />
+      <DirSelect prompt="CCS project directory" variable="installDir" default="" eval="false" tab="General" />
+
+      <ComboBox prompt="Board" variable="board" default="1">
+        <!-- list must match definition in TI28004x.lua -->
+        <Item>Custom</Item>
+        <Item>LaunchPad</Item>
+        <Item>ControlCard</Item>
+      </ComboBox>
+      <FileSelect prompt="Uniflash target configuration" variable="uniflashFile" default="" eval="false" tab="General" filters="Target configuration (*.ccxml)" />
+
+      <CheckBox prompt="Enable PGA 1" variable="pga1En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga1Gain" default="1" tab="PGA">
+        <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga1Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+      <CheckBox prompt="Enable PGA 2" variable="pga2En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga2Gain" default="1" tab="PGA">
+       <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga2Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+      <CheckBox prompt="Enable PGA 3" variable="pga3En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga3Gain" default="1" tab="PGA">
+       <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga3Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+      <CheckBox prompt="Enable PGA 4" variable="pga4En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga4Gain" default="1" tab="PGA">
+       <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga4Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+      <CheckBox prompt="Enable PGA 5" variable="pga5En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga5Gain" default="1" tab="PGA">
+       <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga5Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+      <CheckBox prompt="Enable PGA 6" variable="pga6En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga6Gain" default="1" tab="PGA">
+       <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga6Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+      <CheckBox prompt="Enable PGA 7" variable="pga7En" default="0" tab="PGA" />
+      <ComboBox prompt="Gain" variable="pga7Gain" default="1" tab="PGA">
+       <Item>3x</Item><Item>6x</Item><Item>12x</Item><Item>24x</Item>
+      </ComboBox>
+      <ComboBox prompt="Filter resistance" variable="pga7Rf" default="1" tab="PGA">
+        <Item>off</Item><Item>200 Ohm</Item><Item>160 Ohm</Item><Item>130 Ohm</Item><Item>100 Ohm</Item><Item>80 Ohm</Item><Item>50 Ohm</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable TZ 1" variable="Tz1Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 1 GPIO" variable="Tz1Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 2" variable="Tz2Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 2 GPIO" variable="Tz2Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 3" variable="Tz3Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 3 GPIO" variable="Tz3Gpio" default="0" eval="true" tab="Protections" />
+
+      <CheckBox prompt="Enable analog trip 1" variable="AnTrip1Enable" default="0" tab="Protections" />
+      <ComboBox prompt="Input type" variable="AnTrip1InputType" default="1" tab="Protections">
+        <Item>ADC</Item><Item>PGA</Item>
+      </ComboBox>
+      <ComboBox prompt="ADC unit" variable="AnTrip1AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip1AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="PGA unit" variable="AnTrip1PgaUnit" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip1ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip1ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip1Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 2" variable="AnTrip2Enable" default="0" tab="Protections" />
+      <ComboBox prompt="Input type" variable="AnTrip2InputType" default="1" tab="Protections">
+        <Item>ADC</Item><Item>PGA</Item>
+      </ComboBox>
+      <ComboBox prompt="ADC unit" variable="AnTrip2AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip2AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="PGA unit" variable="AnTrip2PgaUnit" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip2ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip2ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip2Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 3" variable="AnTrip3Enable" default="0" tab="Protections" />
+      <ComboBox prompt="Input type" variable="AnTrip3InputType" default="1" tab="Protections">
+        <Item>ADC</Item><Item>PGA</Item>
+      </ComboBox>
+      <ComboBox prompt="ADC unit" variable="AnTrip3AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip3AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="PGA unit" variable="AnTrip3PgaUnit" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip3ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip3ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip3Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+       <CheckBox prompt="Enable analog trip 4" variable="AnTrip4Enable" default="0" tab="Protections" />
+      <ComboBox prompt="Input type" variable="AnTrip4InputType" default="1" tab="Protections">
+        <Item>ADC</Item><Item>PGA</Item>
+      </ComboBox>
+      <ComboBox prompt="ADC unit" variable="AnTrip4AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip4AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="PGA unit" variable="AnTrip4PgaUnit" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip4ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip4ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip4Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <ExtModeSelect tab="External Mode" />
+      <LineEdit prompt="Target buffer size" variable="extModeBufferSize" default="1000" eval="true" tab="External Mode" />
+      <LineEdit prompt="GPIO [Rx,Tx]" variable="extModeSciPins" default="[28, 29]" eval="true" tab="External Mode" />
+
+      <CheckBox prompt="Check for updates at build" variable="CheckForUpdates" default="1" tab="Updates" />
+    </Parameters>
+    <DialogCallback><![CDATA[
+      Dialog:set('USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS', 'Visible', false)
+
+      Dialog:set('extClkMHz', 'Visible', Dialog:get('useIntOsc') == '0')
+      Dialog:set('SampleTimeRelTol', 'Visible', Dialog:get('taskFreqTol') == '2')
+      Dialog:set('LinkerCommandFile', 'Visible', (Dialog:get('buildConfig') == '3') and (Dialog:get('genOnly') ~= '1'))
+      Dialog:set('installDir', 'Visible', Dialog:get('genOnly') == '1')
+      Dialog:set('board', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('uniflashFile', 'Visible', (Dialog:get('genOnly') ~= '1') and (Dialog:get('board') == '1'))
+      Dialog:set('buildConfig', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('extModeBufferSize', 'Visible', Dialog:get('EXTERNAL_MODE') ~= '0')
+      Dialog:set('extModeSciPins', 'Visible', Dialog:get('EXTERNAL_MODE') == '1')
+      for i=1,7 do
+        Dialog:set('pga%iGain' % {i}, 'Visible', Dialog:get('pga%iEn' % {i}) == '1')
+        Dialog:set('pga%iRf' % {i}, 'Visible', Dialog:get('pga%iEn' % {i}) == '1')
+      end
+      for i=1,3 do
+        Dialog:set('Tz%iGpio' % {i}, 'Visible', Dialog:get('Tz%iEnable' % {i}) == '1')
+      end
+      for i=1,4 do
+        local analogTripEnabled = (Dialog:get('AnTrip%iEnable' % {i}) == '1')
+        Dialog:set('AnTrip%iInputType' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iAdcUnit' % {i}, 'Visible', analogTripEnabled and Dialog:get('AnTrip%iInputType' % {i}) == '1')
+        Dialog:set('AnTrip%iAdcChannel' % {i}, 'Visible', analogTripEnabled and Dialog:get('AnTrip%iInputType' % {i}) == '1')
+        Dialog:set('AnTrip%iPgaUnit' % {i}, 'Visible', analogTripEnabled and Dialog:get('AnTrip%iInputType' % {i}) == '2')
+        Dialog:set('AnTrip%iThresholdLow' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdHigh' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iSignal' % {i}, 'Visible', analogTripEnabled)
+      end
+      ]]>
+    </DialogCallback>
+  </Target>
+  <Target help="c2000help.qch">
+    <Name>TI2833x</Name>
+    <Version>1.5.5</Version>
+    <MultiTasking NumCores="1" />
+    <Parameters>
+      <ComboBox prompt="Chip" variable="chip" default="1">
+        <Item>28335</Item>
+      </ComboBox>
+      <LineEdit prompt="System clock frequency (SYSCLK) [MHz]" variable="sysClkMHz" default="150" eval="true" tab="General" />
+      <LineEdit prompt="External clock frequency [MHz]" variable="extClkMHz" default="30" eval="true" tab="General" />
+      <ComboBox prompt="Step size tolerance" variable="taskFreqTol" default="1" tab="General">
+        <Item>Enforce exact value</Item>
+        <Item>Round to closest achievable value</Item>
+      </ComboBox>
+      <LineEdit prompt="Step size tolerance band [%]" variable="SampleTimeRelTol" default="10" tab="General" />
+
+      <ComboBox prompt="Build type" variable="genOnly" default="2">
+        <Item>Generate code into CCS project</Item>
+        <Item>Build and program</Item>
+      </ComboBox>
+
+      <ComboBox prompt="Build configuration" variable="buildConfig" default="1">
+        <Item>Run from Flash</Item>
+        <Item>Run from RAM</Item>
+        <Item>Custom linking</Item>
+      </ComboBox>
+      <FileSelect prompt="Linker command file" variable="LinkerCommandFile" default="" eval="false" tab="General" />
+      <DirSelect prompt="CCS project directory" variable="installDir" default="" eval="false" tab="General" />
+
+      <ComboBox prompt="Board" variable="board" default="1">
+        <!-- list must match definition in TI2833x.lua -->
+        <Item>Custom</Item>
+      </ComboBox>
+      <FileSelect prompt="Uniflash target configuration" variable="uniflashFile" default="" eval="false" tab="General" filters="Target configuration (*.ccxml)" />
+
+      <CheckBox prompt="Enable TZ 1" variable="Tz1Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 1 GPIO" variable="Tz1Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 2" variable="Tz2Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 2 GPIO" variable="Tz2Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 3" variable="Tz3Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 3 GPIO" variable="Tz3Gpio" default="0" eval="true" tab="Protections" />
+
+      <ExtModeSelect tab="External Mode" />
+      <LineEdit prompt="Target buffer size" variable="extModeBufferSize" default="1000" eval="true" tab="External Mode" />
+      <LineEdit prompt="GPIO [Rx,Tx]" variable="extModeSciPins" default="[28, 29]" eval="true" tab="External Mode" />
+
+      <CheckBox prompt="Check for updates at build" variable="CheckForUpdates" default="1" tab="Updates" />
+    </Parameters>
+    <DialogCallback><![CDATA[
+      Dialog:set('USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS', 'Visible', false)
+
+      Dialog:set('SampleTimeRelTol', 'Visible', Dialog:get('taskFreqTol') == '2')
+      Dialog:set('LinkerCommandFile', 'Visible', (Dialog:get('buildConfig') == '3') and (Dialog:get('genOnly') ~= '1'))
+      Dialog:set('installDir', 'Visible', Dialog:get('genOnly') == '1')
+      Dialog:set('board', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('buildConfig', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('uniflashFile', 'Visible', (Dialog:get('genOnly') ~= '1') and (Dialog:get('board') == '1'))
+      Dialog:set('extModeBufferSize', 'Visible', Dialog:get('EXTERNAL_MODE') ~= '0')
+      Dialog:set('extModeSciPins', 'Visible', Dialog:get('EXTERNAL_MODE') == '1')
+      
+      for i=1,3 do
+        Dialog:set('Tz%iGpio' % {i}, 'Visible', Dialog:get('Tz%iEnable' % {i}) == '1')
+      end
+      ]]>
+    </DialogCallback>
+  </Target>
+  <Target help="c2000help.qch">
+    <Name>TI2837xS</Name>
+    <Version>1.5.5</Version>
+    <MultiTasking NumCores="1" />
+    <Parameters>
+      <ComboBox prompt="Chip" variable="chip" default="1">
+        <Item>28379S</Item>
+      </ComboBox>
+      <LineEdit prompt="System clock frequency (SYSCLK) [MHz]" variable="sysClkMHz" default="190" eval="true" tab="General" />
+      <CheckBox prompt="Use internal oscillator" variable="useIntOsc" default="1" tab="General" />
+      <LineEdit prompt="External clock frequency [MHz]" variable="extClkMHz" default="30" eval="true" tab="General" />
+      <ComboBox prompt="Step size tolerance" variable="taskFreqTol" default="1" tab="General">
+        <Item>Enforce exact value</Item>
+        <Item>Round to closest achievable value</Item>
+      </ComboBox>
+      <LineEdit prompt="Step size tolerance band [%]" variable="SampleTimeRelTol" default="10" tab="General" />
+
+      <ComboBox prompt="Build type" variable="genOnly" default="2">
+        <Item>Generate code into CCS project</Item>
+        <Item>Build and program</Item>
+      </ComboBox>
+
+      <ComboBox prompt="Build configuration" variable="buildConfig" default="1">
+        <Item>Run from Flash</Item>
+        <Item>Run from RAM</Item>
+        <Item>Custom linking</Item>
+      </ComboBox>
+      <DirSelect prompt="CCS project directory" variable="installDir" default="" eval="false" tab="General" />
+      <FileSelect prompt="Linker command file" variable="LinkerCommandFile" default="" eval="false" tab="General" />
+
+      <ComboBox prompt="Board" variable="board" default="1">
+        <!-- list must match definition in TI2837xS.lua -->
+        <Item>Custom</Item>
+        <Item>LaunchPad</Item>
+        <Item>ControlCard</Item>
+      </ComboBox>
+      <FileSelect prompt="Uniflash target configuration" variable="uniflashFile" default="" eval="false" tab="General" filters="Target configuration (*.ccxml)" />
+
+      <CheckBox prompt="Enable TZ 1" variable="Tz1Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 1 GPIO" variable="Tz1Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 2" variable="Tz2Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 2 GPIO" variable="Tz2Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 3" variable="Tz3Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 3 GPIO" variable="Tz3Gpio" default="0" eval="true" tab="Protections" />
+
+      <CheckBox prompt="Enable analog trip 1" variable="AnTrip1Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip1AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip1AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip1ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip1ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip1Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 2" variable="AnTrip2Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip2AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip2AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip2ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip2ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip2Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 3" variable="AnTrip3Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip3AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip3AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip3ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip3ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip3Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 4" variable="AnTrip4Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip4AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip4AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip4ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip4ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip4Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <ExtModeSelect tab="External Mode" />
+      <LineEdit prompt="Target buffer size" variable="extModeBufferSize" default="1000" eval="true" tab="External Mode" />
+      <LineEdit prompt="GPIO [Rx,Tx]" variable="extModeSciPins" default="[85, 84]" eval="true" tab="External Mode" />
+
+      <CheckBox prompt="Check for updates at build" variable="CheckForUpdates" default="1" tab="Updates" />
+    </Parameters>
+    <DialogCallback><![CDATA[
+      Dialog:set('USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS', 'Visible', false)
+
+      Dialog:set('extClkMHz', 'Visible', Dialog:get('useIntOsc') == '0')
+      Dialog:set('SampleTimeRelTol', 'Visible', Dialog:get('taskFreqTol') == '2')
+      Dialog:set('LinkerCommandFile', 'Visible', (Dialog:get('buildConfig') == '3') and (Dialog:get('genOnly') ~= '1'))
+      Dialog:set('installDir', 'Visible', Dialog:get('genOnly') == '1')
+      Dialog:set('board', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('uniflashFile', 'Visible', (Dialog:get('genOnly') ~= '1') and (Dialog:get('board') == '1'))
+      Dialog:set('buildConfig', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('extModeBufferSize', 'Visible', Dialog:get('EXTERNAL_MODE') ~= '0')
+      Dialog:set('extModeSciPins', 'Visible', Dialog:get('EXTERNAL_MODE') == '1')
+      
+      for i=1,3 do
+        Dialog:set('Tz%iGpio' % {i}, 'Visible', Dialog:get('Tz%iEnable' % {i}) == '1')
+      end
+      for i=1,4 do
+        local analogTripEnabled = (Dialog:get('AnTrip%iEnable' % {i}) == '1')
+        Dialog:set('AnTrip%iAdcUnit' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iAdcChannel' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdLow' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdHigh' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iSignal' % {i}, 'Visible', analogTripEnabled)
+      end
+      ]]>
+    </DialogCallback>
+  </Target>
+  <Target help="c2000help.qch">
+    <Name>TI2837x</Name>
+    <Version>1.5.5</Version>
+    <MultiTasking NumCores="1" />
+    <Parameters>
+      <ComboBox prompt="Chip" variable="chip" default="1">
+        <Item>28379D</Item>
+      </ComboBox>
+      
+      <ComboBox prompt="Target core" variable="targetCore" default="1" tab="General">
+        <Item>CPU1</Item>
+        <Item>CPU2</Item>
+      </ComboBox>
+      
+      <ComboBox prompt="CPU2 operation" variable="SecondaryCore" default="1" tab="General">
+        <Item>Disabled</Item>
+        <Item>Enabled</Item>
+      </ComboBox>
+      
+      <LineEdit prompt="CPU2 model base name" variable="SecondaryCoreModelBaseName" default="" eval="false" tab="General" />
+      
+      <LineEdit prompt="System clock frequency (SYSCLK) [MHz]" variable="sysClkMHz" default="190" eval="true" tab="General" />
+      <CheckBox prompt="Use internal oscillator" variable="useIntOsc" default="1" tab="General" />
+      <LineEdit prompt="External clock frequency [MHz]" variable="extClkMHz" default="30" eval="true" tab="General" />
+      <ComboBox prompt="Step size tolerance" variable="taskFreqTol" default="1" tab="General">
+        <Item>Enforce exact value</Item>
+        <Item>Round to closest achievable value</Item>
+      </ComboBox>
+      <LineEdit prompt="Step size tolerance band [%]" variable="SampleTimeRelTol" default="10" tab="General" />
+
+      <ComboBox prompt="Build type" variable="genOnly" default="2">
+        <Item>Generate code into CCS project</Item>
+        <Item>Build and program</Item>
+      </ComboBox>
+
+      <ComboBox prompt="Build configuration" variable="buildConfig" default="1">
+        <Item>Run from Flash</Item>
+        <Item>Run from RAM</Item>
+        <Item>Custom linking</Item>
+      </ComboBox>
+      <DirSelect prompt="CCS project directory" variable="installDir" default="" eval="false" tab="General" />
+      <FileSelect prompt="Linker command file" variable="LinkerCommandFile" default="" eval="false" tab="General" />
+
+      <ComboBox prompt="Board" variable="board" default="1">
+        <!-- list must match definition in TI2837xS.lua -->
+        <Item>Custom</Item>
+        <Item>LaunchPad</Item>
+        <Item>ControlCard</Item>
+      </ComboBox>
+      <FileSelect prompt="Uniflash target configuration" variable="uniflashFile" default="" eval="false" tab="General" filters="Target configuration (*.ccxml)" />
+
+      <CheckBox prompt="Enable TZ 1" variable="Tz1Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 1 GPIO" variable="Tz1Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 2" variable="Tz2Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 2 GPIO" variable="Tz2Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 3" variable="Tz3Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 3 GPIO" variable="Tz3Gpio" default="0" eval="true" tab="Protections" />
+
+      <CheckBox prompt="Enable analog trip 1" variable="AnTrip1Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip1AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip1AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip1ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip1ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip1Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 2" variable="AnTrip2Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip2AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...25]" variable="AnTrip2AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip2ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip2ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip2Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 3" variable="AnTrip3Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip3AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...35]" variable="AnTrip3AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip3ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip3ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip3Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 4" variable="AnTrip4Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip4AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...45]" variable="AnTrip4AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip4ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip4ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip4Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <ExtModeSelect tab="External Mode" />
+      <LineEdit prompt="Target buffer size" variable="extModeBufferSize" default="1000" eval="true" tab="External Mode" />
+      <LineEdit prompt="GPIO [Rx,Tx]" variable="extModeSciPins" default="[85, 84]" eval="true" tab="External Mode" />
+
+      <CheckBox prompt="Check for updates at build" variable="CheckForUpdates" default="1" tab="Updates" />
+    </Parameters>
+    <DialogCallback><![CDATA[
+      Dialog:set('USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS', 'Visible', false)
+      
+      Dialog:set('SecondaryCore', 'Visible', Dialog:get('targetCore') == '1')
+      Dialog:set('SecondaryCoreModelBaseName', 'Visible', Dialog:get('SecondaryCore') == '2')
+
+      Dialog:set('useIntOsc', 'Visible', Dialog:get('targetCore') == '1')
+      Dialog:set('extClkMHz', 'Visible', Dialog:get('targetCore') == '1' and Dialog:get('useIntOsc') == '0')
+      Dialog:set('SampleTimeRelTol', 'Visible', Dialog:get('taskFreqTol') == '2')
+      Dialog:set('LinkerCommandFile', 'Visible', (Dialog:get('buildConfig') == '3') and (Dialog:get('genOnly') ~= '1'))
+      Dialog:set('installDir', 'Visible', Dialog:get('genOnly') == '1')
+      Dialog:set('board', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('uniflashFile', 'Visible', (Dialog:get('genOnly') ~= '1') and (Dialog:get('board') == '1'))
+      Dialog:set('buildConfig', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('extModeBufferSize', 'Visible', Dialog:get('EXTERNAL_MODE') ~= '0')
+      Dialog:set('extModeSciPins', 'Visible', Dialog:get('EXTERNAL_MODE') == '1')
+      
+      for i=1,3 do
+        Dialog:set('Tz%iGpio' % {i}, 'Visible', Dialog:get('Tz%iEnable' % {i}) == '1')
+      end
+      for i=1,4 do
+        local analogTripEnabled = (Dialog:get('AnTrip%iEnable' % {i}) == '1')
+        Dialog:set('AnTrip%iAdcUnit' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iAdcChannel' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdLow' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdHigh' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iSignal' % {i}, 'Visible', analogTripEnabled)
+      end
+      ]]>
+    </DialogCallback>
+  </Target>
+  <Target help="c2000help.qch">
+    <Name>TI2838x</Name>
+    <Version>1.5.5</Version>
+    <MultiTasking NumCores="1" />
+    <Parameters>
+      <ComboBox prompt="Chip" variable="chip" default="1">
+        <Item>28388D</Item>
+      </ComboBox>
+      
+      <ComboBox prompt="Target core" variable="targetCore" default="1" tab="General">
+        <Item>CPU1</Item>
+        <Item>CPU2</Item>
+      </ComboBox>
+      
+      <ComboBox prompt="CPU2 operation" variable="SecondaryCore" default="1" tab="General">
+        <Item>Disabled</Item>
+        <Item>Enabled</Item>
+      </ComboBox>
+      
+      <LineEdit prompt="CPU2 model base name" variable="SecondaryCoreModelBaseName" default="" eval="false" tab="General" />
+      
+      <LineEdit prompt="System clock frequency (SYSCLK) [MHz]" variable="sysClkMHz" default="190" eval="true" tab="General" />
+      <CheckBox prompt="Use internal oscillator" variable="useIntOsc" default="1" tab="General" />
+      <LineEdit prompt="External clock frequency [MHz]" variable="extClkMHz" default="25" eval="true" tab="General" />
+      <ComboBox prompt="Step size tolerance" variable="taskFreqTol" default="1" tab="General">
+        <Item>Enforce exact value</Item>
+        <Item>Round to closest achievable value</Item>
+      </ComboBox>
+      <LineEdit prompt="Step size tolerance band [%]" variable="SampleTimeRelTol" default="10" tab="General" />
+
+      <ComboBox prompt="Build type" variable="genOnly" default="2">
+        <Item>Generate code into CCS project</Item>
+        <Item>Build and program</Item>
+      </ComboBox>
+
+      <ComboBox prompt="Build configuration" variable="buildConfig" default="1">
+        <Item>Run from Flash</Item>
+        <Item>Run from RAM</Item>
+        <Item>Custom linking</Item>
+      </ComboBox>
+      <DirSelect prompt="CCS project directory" variable="installDir" default="" eval="false" tab="General" />
+      <FileSelect prompt="Linker command file" variable="LinkerCommandFile" default="" eval="false" tab="General" />
+
+      <ComboBox prompt="Board" variable="board" default="1">
+        <!-- list must match definition in TI2838xS.lua -->
+        <Item>Custom</Item>
+        <Item>ControlCard</Item>
+      </ComboBox>
+      <FileSelect prompt="Uniflash target configuration" variable="uniflashFile" default="" eval="false" tab="General" filters="Target configuration (*.ccxml)" />
+
+      <CheckBox prompt="Enable TZ 1" variable="Tz1Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 1 GPIO" variable="Tz1Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 2" variable="Tz2Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 2 GPIO" variable="Tz2Gpio" default="0" eval="true" tab="Protections" />
+      <CheckBox prompt="Enable TZ 3" variable="Tz3Enable" default="0" tab="Protections" />
+      <LineEdit prompt="TZ 3 GPIO" variable="Tz3Gpio" default="0" eval="true" tab="Protections" />
+
+      <CheckBox prompt="Enable analog trip 1" variable="AnTrip1Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip1AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip1AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip1ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip1ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip1Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 2" variable="AnTrip2Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip2AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip2AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip2ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip2ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip2Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 3" variable="AnTrip3Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip3AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip3AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip3ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip3ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip3Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <CheckBox prompt="Enable analog trip 4" variable="AnTrip4Enable" default="0" tab="Protections" />
+      <ComboBox prompt="ADC unit" variable="AnTrip4AdcUnit" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item><Item>D</Item>
+      </ComboBox>
+      <LineEdit prompt="ADC input channel [0...15]" variable="AnTrip4AdcChannel" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Upper threshold voltage [V]" variable="AnTrip4ThresholdHigh" default="0" eval="true" tab="Protections" />
+      <LineEdit prompt="Lower threshold voltage [V]" variable="AnTrip4ThresholdLow" default="0" eval="true" tab="Protections" />
+      <ComboBox prompt="Emit trip signal" variable="AnTrip4Signal" default="1" tab="Protections">
+        <Item>A</Item><Item>B</Item><Item>C</Item>
+      </ComboBox>
+
+      <ExtModeSelect tab="External Mode" />
+      <LineEdit prompt="Target buffer size" variable="extModeBufferSize" default="1000" eval="true" tab="External Mode" />
+      <LineEdit prompt="GPIO [Rx,Tx]" variable="extModeSciPins" default="[28, 29]" eval="true" tab="External Mode" />
+
+      <CheckBox prompt="Check for updates at build" variable="CheckForUpdates" default="1" tab="Updates" />
+    </Parameters>
+    <DialogCallback><![CDATA[
+      Dialog:set('USE_DATA_TYPES_FOR_TUNABLE_PARAMETERS', 'Visible', false)
+
+      Dialog:set('SecondaryCore', 'Visible', Dialog:get('targetCore') == '1')
+      Dialog:set('SecondaryCoreModelBaseName', 'Visible', Dialog:get('SecondaryCore') == '2')
+
+      Dialog:set('useIntOsc', 'Visible', Dialog:get('targetCore') == '1')
+      Dialog:set('extClkMHz', 'Visible', Dialog:get('targetCore') == '1' and Dialog:get('useIntOsc') == '0')
+      Dialog:set('SampleTimeRelTol', 'Visible', Dialog:get('taskFreqTol') == '2')
+      Dialog:set('LinkerCommandFile', 'Visible', (Dialog:get('buildConfig') == '3') and (Dialog:get('genOnly') ~= '1'))
+      Dialog:set('installDir', 'Visible', Dialog:get('genOnly') == '1')
+      Dialog:set('board', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('uniflashFile', 'Visible', (Dialog:get('genOnly') ~= '1') and (Dialog:get('board') == '1'))
+      Dialog:set('buildConfig', 'Visible', Dialog:get('genOnly') ~= '1')
+      Dialog:set('extModeBufferSize', 'Visible', Dialog:get('EXTERNAL_MODE') ~= '0')
+      Dialog:set('extModeSciPins', 'Visible', Dialog:get('EXTERNAL_MODE') == '1')
+      
+      for i=1,3 do
+        Dialog:set('Tz%iGpio' % {i}, 'Visible', Dialog:get('Tz%iEnable' % {i}) == '1')
+      end
+      for i=1,4 do
+        local analogTripEnabled = (Dialog:get('AnTrip%iEnable' % {i}) == '1')
+        Dialog:set('AnTrip%iAdcUnit' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iAdcChannel' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdLow' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iThresholdHigh' % {i}, 'Visible', analogTripEnabled)
+        Dialog:set('AnTrip%iSignal' % {i}, 'Visible', analogTripEnabled)
+      end
+      ]]>
+    </DialogCallback>
+  </Target>
+</TargetSupportPackage>
+

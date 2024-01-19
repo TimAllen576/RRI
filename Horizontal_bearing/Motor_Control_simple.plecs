@@ -1,0 +1,1084 @@
+Plecs {
+  Name          "Tim Motor Control_simple"
+  Version       "4.7"
+  CircuitModel  "DiscStateSpace"
+  StartTime     "0.0"
+  TimeSpan      "80"
+  Timeout       ""
+  Solver        "auto"
+  MaxStep       "1e-3"
+  InitStep      "-1"
+  FixedStep     "100e-6"
+  Refine        "1"
+  ZCStepSize    "1e-9"
+  RelTol        "1e-3"
+  AbsTol        "-1"
+  TurnOnThreshold "0"
+  SyncFixedStepTasks "2"
+  UseSingleCommonBaseRate "2"
+  LossVariableLimitExceededMsg "3"
+  NegativeSwitchLossMsg "3"
+  DivisionByZeroMsg "2"
+  StiffnessDetectionMsg "2"
+  MaxConsecutiveZCs "1000"
+  AlgebraicLoopWithStateMachineMsg "3"
+  AssertionAction "1"
+  InitializationCommands ""
+  InitialState  "1"
+  SystemState   ""
+  TaskingMode   "1"
+  TaskConfigurations ""
+  CodeGenParameterInlining "2"
+  CodeGenInliningExceptions "AAAACwAAAAAEAAAACgBTAHAAZQBlAGQAAAAYAFIAYQB0AGUAI"
+"ABsAGkAbQBpAHQAZQByAAAAFABQAFcATQAgAHMAdwBpAHQAYwBoAAAAJgBGAHIAZQBxAHUAZQBuAG"
+"MAeQAgAHYAYQByAGkAYQB0AGkAbwBu"
+  CodeGenFloatingPointFormat "1"
+  CodeGenAbsTimeUsageMsg "2"
+  CodeGenBaseName ""
+  CodeGenOutputDir ""
+  CodeGenExtraOpts ""
+  CodeGenTarget "TI2837x"
+  CodeGenTargetSettings "AAAAfwAAAAAlUU1hcDxRU3RyaW5nLFFNYXA8UVN0cmluZyxRU3Rya"
+"W5nPiA+AAAAAAQAAAAOAFQASQAyADgAMwA4AHgAAABkAAAAEgB1AHMAZQBJAG4AdABPAHMAYwAAAA"
+"IAMQAAABgAdQBuAGkAZgBsAGEAcwBoAEYAaQBsAGUAAAAAAAAAFgB0AGEAcwBrAEYAcgBlAHEAVAB"
+"vAGwAAAACADEAAAASAHMAeQBzAEMAbABrAE0ASAB6AAAABgAxADkAMAAAABQAaQBuAHMAdABhAGwA"
+"bABEAGkAcgAAAAAAAAAOAGcAZQBuAE8AbgBsAHkAAAACADIAAAAcAGUAeAB0AE0AbwBkAGUAUwBjA"
+"GkAUABpAG4AcwAAAA4AWwAyADgALAAyADkAXQAAACIAZQB4AHQATQBvAGQAZQBCAHUAZgBmAGUAcg"
+"BTAGkAegBlAAAACAAxADAAMAAwAAAAEgBlAHgAdABDAGwAawBNAEgAegAAAAQAMgA1AAAACABjAGg"
+"AaQBwAAAAAgAxAAAAFgBiAHUAaQBsAGQAQwBvAG4AZgBpAGcAAAACADEAAAAKAGIAbwBhAHIAZAAA"
+"AAIAMgAAABAAVgByAGUAZgBBAGQAYwBEAAAABgAzAC4AMAAAABAAVgByAGUAZgBBAGQAYwBDAAAAB"
+"gAzAC4AMAAAABAAVgByAGUAZgBBAGQAYwBCAAAABgAzAC4AMAAAABAAVgByAGUAZgBBAGQAYwBBAA"
+"AABgAzAC4AMAAAADQAVQBTAEUAXwBTAFQAQQBSAFQAXwBUAEkATQBFAF8ASQBOAF8ASQBOAEkAVAB"
+"fAEYAQwBOAAAAAgAwAAAASgBVAFMARQBfAEQAQQBUAEEAXwBUAFkAUABFAFMAXwBGAE8AUgBfAFQA"
+"VQBOAEEAQgBMAEUAXwBQAEEAUgBBAE0ARQBUAEUAUgBTAAAAAgAxAAAADgBUAHoAMwBHAHAAaQBvA"
+"AAAAgAwAAAAEgBUAHoAMwBFAG4AYQBiAGwAZQAAAAIAMAAAAA4AVAB6ADIARwBwAGkAbwAAAAIAMA"
+"AAABIAVAB6ADIARQBuAGEAYgBsAGUAAAACADAAAAAOAFQAegAxAEcAcABpAG8AAAACADAAAAASAFQ"
+"AegAxAEUAbgBhAGIAbABlAAAAAgAwAAAAGgBUAEEAUgBHAEUAVABfAEQARQBWAEkAQwBF/////wAA"
+"ACAAUwBhAG0AcABsAGUAVABpAG0AZQBSAGUAbABUAG8AbAAAAAQAMQAwAAAAFABQAHcAbQA5AEcAc"
+"ABpAG8ARQBuAAAAAgAwAAAAEgBQAHcAbQA5AEIARwBwAGkAbwAAAAQAMQA3AAAAEgBQAHcAbQA5AE"
+"EARwBwAGkAbwAAAAQAMQA2AAAAFABQAHcAbQA4AEcAcABpAG8ARQBuAAAAAgAwAAAAEgBQAHcAbQA"
+"4AEIARwBwAGkAbwAAAAQAMQA1AAAAEgBQAHcAbQA4AEEARwBwAGkAbwAAAAQAMQA0AAAAFABQAHcA"
+"bQA3AEcAcABpAG8ARQBuAAAAAgAwAAAAEgBQAHcAbQA3AEIARwBwAGkAbwAAAAQAMQAzAAAAEgBQA"
+"HcAbQA3AEEARwBwAGkAbwAAAAQAMQAyAAAAFABQAHcAbQA2AEcAcABpAG8ARQBuAAAAAgAwAAAAEg"
+"BQAHcAbQA2AEIARwBwAGkAbwAAAAQAMQAxAAAAEgBQAHcAbQA2AEEARwBwAGkAbwAAAAQAMQAwAAA"
+"AFABQAHcAbQA1AEcAcABpAG8ARQBuAAAAAgAwAAAAEgBQAHcAbQA1AEIARwBwAGkAbwAAAAIAOQAA"
+"ABIAUAB3AG0ANQBBAEcAcABpAG8AAAACADgAAAAUAFAAdwBtADQARwBwAGkAbwBFAG4AAAACADAAA"
+"AASAFAAdwBtADQAQgBHAHAAaQBvAAAAAgA3AAAAEgBQAHcAbQA0AEEARwBwAGkAbwAAAAIANgAAAB"
+"QAUAB3AG0AMwBHAHAAaQBvAEUAbgAAAAIAMAAAABIAUAB3AG0AMwBCAEcAcABpAG8AAAACADUAAAA"
+"SAFAAdwBtADMAQQBHAHAAaQBvAAAAAgA0AAAAFABQAHcAbQAyAEcAcABpAG8ARQBuAAAAAgAwAAAA"
+"EgBQAHcAbQAyAEIARwBwAGkAbwAAAAIAMwAAABIAUAB3AG0AMgBBAEcAcABpAG8AAAACADIAAAAUA"
+"FAAdwBtADEARwBwAGkAbwBFAG4AAAACADAAAAASAFAAdwBtADEAQgBHAHAAaQBvAAAAAgAxAAAAEg"
+"BQAHcAbQAxAEEARwBwAGkAbwAAAAIAMAAAABYAUAB3AG0AMQA2AEcAcABpAG8ARQBuAAAAAgAwAAA"
+"AFABQAHcAbQAxADYAQgBHAHAAaQBvAAAABAAzADEAAAAUAFAAdwBtADEANgBBAEcAcABpAG8AAAAE"
+"ADMAMAAAABYAUAB3AG0AMQA1AEcAcABpAG8ARQBuAAAAAgAwAAAAFABQAHcAbQAxADUAQgBHAHAAa"
+"QBvAAAABAAyADkAAAAUAFAAdwBtADEANQBBAEcAcABpAG8AAAAEADIAOAAAABYAUAB3AG0AMQA0AE"
+"cAcABpAG8ARQBuAAAAAgAwAAAAFABQAHcAbQAxADQAQgBHAHAAaQBvAAAABAAyADcAAAAUAFAAdwB"
+"tADEANABBAEcAcABpAG8AAAAEADIANgAAABYAUAB3AG0AMQAzAEcAcABpAG8ARQBuAAAAAgAwAAAA"
+"FABQAHcAbQAxADMAQgBHAHAAaQBvAAAABAAyADUAAAAUAFAAdwBtADEAMwBBAEcAcABpAG8AAAAEA"
+"DIANAAAABYAUAB3AG0AMQAyAEcAcABpAG8ARQBuAAAAAgAwAAAAFABQAHcAbQAxADIAQgBHAHAAaQ"
+"BvAAAABAAyADMAAAAUAFAAdwBtADEAMgBBAEcAcABpAG8AAAAEADIAMgAAABYAUAB3AG0AMQAxAEc"
+"AcABpAG8ARQBuAAAAAgAwAAAAFABQAHcAbQAxADEAQgBHAHAAaQBvAAAABAAyADEAAAAUAFAAdwBt"
+"ADEAMQBBAEcAcABpAG8AAAAEADIAMAAAABYAUAB3AG0AMQAwAEcAcABpAG8ARQBuAAAAAgAwAAAAF"
+"ABQAHcAbQAxADAAQgBHAHAAaQBvAAAABAAxADkAAAAUAFAAdwBtADEAMABBAEcAcABpAG8AAAAEAD"
+"EAOAAAACIATABpAG4AawBlAHIAQwBvAG0AbQBhAG4AZABGAGkAbABlAAAAAAAAABoARQBYAFQARQB"
+"SAE4AQQBMAF8ATQBPAEQARQAAAAIAMAAAACYAQQBuAFQAcgBpAHAANABUAGgAcgBlAHMAaABvAGwA"
+"ZABMAG8AdwAAAAIAMAAAACgAQQBuAFQAcgBpAHAANABUAGgAcgBlAHMAaABvAGwAZABIAGkAZwBoA"
+"AAAAgAwAAAAGgBBAG4AVAByAGkAcAA0AFMAaQBnAG4AYQBsAAAAAgAxAAAAGgBBAG4AVAByAGkAcA"
+"A0AEUAbgBhAGIAbABlAAAAAgAwAAAAHABBAG4AVAByAGkAcAA0AEEAZABjAFUAbgBpAHQAAAACADE"
+"AAAAiAEEAbgBUAHIAaQBwADQAQQBkAGMAQwBoAGEAbgBuAGUAbAAAAAIAMAAAACYAQQBuAFQAcgBp"
+"AHAAMwBUAGgAcgBlAHMAaABvAGwAZABMAG8AdwAAAAIAMAAAACgAQQBuAFQAcgBpAHAAMwBUAGgAc"
+"gBlAHMAaABvAGwAZABIAGkAZwBoAAAAAgAwAAAAGgBBAG4AVAByAGkAcAAzAFMAaQBnAG4AYQBsAA"
+"AAAgAxAAAAGgBBAG4AVAByAGkAcAAzAEUAbgBhAGIAbABlAAAAAgAwAAAAHABBAG4AVAByAGkAcAA"
+"zAEEAZABjAFUAbgBpAHQAAAACADEAAAAiAEEAbgBUAHIAaQBwADMAQQBkAGMAQwBoAGEAbgBuAGUA"
+"bAAAAAIAMAAAACYAQQBuAFQAcgBpAHAAMgBUAGgAcgBlAHMAaABvAGwAZABMAG8AdwAAAAIAMAAAA"
+"CgAQQBuAFQAcgBpAHAAMgBUAGgAcgBlAHMAaABvAGwAZABIAGkAZwBoAAAAAgAwAAAAGgBBAG4AVA"
+"ByAGkAcAAyAFMAaQBnAG4AYQBsAAAAAgAxAAAAGgBBAG4AVAByAGkAcAAyAEUAbgBhAGIAbABlAAA"
+"AAgAwAAAAHABBAG4AVAByAGkAcAAyAEEAZABjAFUAbgBpAHQAAAACADEAAAAiAEEAbgBUAHIAaQBw"
+"ADIAQQBkAGMAQwBoAGEAbgBuAGUAbAAAAAIAMAAAACYAQQBuAFQAcgBpAHAAMQBUAGgAcgBlAHMAa"
+"ABvAGwAZABMAG8AdwAAAAIAMAAAACgAQQBuAFQAcgBpAHAAMQBUAGgAcgBlAHMAaABvAGwAZABIAG"
+"kAZwBoAAAAAgAwAAAAGgBBAG4AVAByAGkAcAAxAFMAaQBnAG4AYQBsAAAAAgAxAAAAGgBBAG4AVAB"
+"yAGkAcAAxAEUAbgBhAGIAbABlAAAAAgAwAAAAHABBAG4AVAByAGkAcAAxAEEAZABjAFUAbgBpAHQA"
+"AAACADEAAAAiAEEAbgBUAHIAaQBwADEAQQBkAGMAQwBoAGEAbgBuAGUAbAAAAAIAMAAAABAAVABJA"
+"DIAOAAzADcAeABTAAAAMAAAABIAdQBzAGUASQBuAHQATwBzAGMAAAACADEAAAAYAHUAbgBpAGYAbA"
+"BhAHMAaABGAGkAbABlAAAAAAAAABYAdABhAHMAawBGAHIAZQBxAFQAbwBsAAAAAgAxAAAAEgBzAHk"
+"AcwBDAGwAawBNAEgAegAAAAYAMQA5ADAAAAAUAGkAbgBzAHQAYQBsAGwARABpAHIAAAAAAAAADgBn"
+"AGUAbgBPAG4AbAB5AAAAAgAyAAAAHABlAHgAdABNAG8AZABlAFMAYwBpAFAAaQBuAHMAAAAQAFsAN"
+"AAzACwAIAA0ADIAXQAAACIAZQB4AHQATQBvAGQAZQBCAHUAZgBmAGUAcgBTAGkAegBlAAAACAAxAD"
+"AAMAAwAAAAEgBlAHgAdABDAGwAawBNAEgAegAAAAQAMwAwAAAACABjAGgAaQBwAAAAAgAxAAAAFgB"
+"iAHUAaQBsAGQAQwBvAG4AZgBpAGcAAAACADEAAAAKAGIAbwBhAHIAZAAAAAIAMgAAAEoAVQBTAEUA"
+"XwBEAEEAVABBAF8AVABZAFAARQBTAF8ARgBPAFIAXwBUAFUATgBBAEIATABFAF8AUABBAFIAQQBNA"
+"EUAVABFAFIAUwAAAAIAMQAAAA4AVAB6ADMARwBwAGkAbwAAAAQAMgA0AAAAEgBUAHoAMwBFAG4AYQ"
+"BiAGwAZQAAAAIAMAAAAA4AVAB6ADIARwBwAGkAbwAAAAQAMgA0AAAAEgBUAHoAMgBFAG4AYQBiAGw"
+"AZQAAAAIAMAAAAA4AVAB6ADEARwBwAGkAbwAAAAQAMgA0AAAAEgBUAHoAMQBFAG4AYQBiAGwAZQAA"
+"AAIAMAAAABoAVABBAFIARwBFAFQAXwBEAEUAVgBJAEMARQAAABQAMAB8AEMATwBNADgAfAAwAHwAM"
+"AAAACAAUwBhAG0AcABsAGUAVABpAG0AZQBSAGUAbABUAG8AbAAAAAQAMQAwAAAAIgBMAGkAbgBrAG"
+"UAcgBDAG8AbQBtAGEAbgBkAEYAaQBsAGUAAAAAAAAAGgBFAFgAVABFAFIATgBBAEwAXwBNAE8ARAB"
+"FAAAAAgAxAAAAHgBDAGgAZQBjAGsARgBvAHIAVQBwAGQAYQB0AGUAcwAAAAIAMQAAACYAQQBuAFQA"
+"cgBpAHAANABUAGgAcgBlAHMAaABvAGwAZABMAG8AdwAAAAIAMAAAACgAQQBuAFQAcgBpAHAANABUA"
+"GgAcgBlAHMAaABvAGwAZABIAGkAZwBoAAAAAgAwAAAAGgBBAG4AVAByAGkAcAA0AFMAaQBnAG4AYQ"
+"BsAAAAAgAxAAAAGgBBAG4AVAByAGkAcAA0AEUAbgBhAGIAbABlAAAAAgAwAAAAHABBAG4AVAByAGk"
+"AcAA0AEEAZABjAFUAbgBpAHQAAAACADEAAAAiAEEAbgBUAHIAaQBwADQAQQBkAGMAQwBoAGEAbgBu"
+"AGUAbAAAAAIAMAAAACYAQQBuAFQAcgBpAHAAMwBUAGgAcgBlAHMAaABvAGwAZABMAG8AdwAAAAIAM"
+"AAAACgAQQBuAFQAcgBpAHAAMwBUAGgAcgBlAHMAaABvAGwAZABIAGkAZwBoAAAABgAzAC4AMwAAAB"
+"oAQQBuAFQAcgBpAHAAMwBTAGkAZwBuAGEAbAAAAAIAMwAAABoAQQBuAFQAcgBpAHAAMwBFAG4AYQB"
+"iAGwAZQAAAAIAMAAAABwAQQBuAFQAcgBpAHAAMwBBAGQAYwBVAG4AaQB0AAAAAgAzAAAAIgBBAG4A"
+"VAByAGkAcAAzAEEAZABjAEMAaABhAG4AbgBlAGwAAAAGAFsANABdAAAAJgBBAG4AVAByAGkAcAAyA"
+"FQAaAByAGUAcwBoAG8AbABkAEwAbwB3AAAAAgAwAAAAKABBAG4AVAByAGkAcAAyAFQAaAByAGUAcw"
+"BoAG8AbABkAEgAaQBnAGgAAAAGADMALgAzAAAAGgBBAG4AVAByAGkAcAAyAFMAaQBnAG4AYQBsAAA"
+"AAgAyAAAAGgBBAG4AVAByAGkAcAAyAEUAbgBhAGIAbABlAAAAAgAwAAAAHABBAG4AVAByAGkAcAAy"
+"AEEAZABjAFUAbgBpAHQAAAACADIAAAAiAEEAbgBUAHIAaQBwADIAQQBkAGMAQwBoAGEAbgBuAGUAb"
+"AAAAAYAWwAyAF0AAAAmAEEAbgBUAHIAaQBwADEAVABoAHIAZQBzAGgAbwBsAGQATABvAHcAAAACAD"
+"AAAAAoAEEAbgBUAHIAaQBwADEAVABoAHIAZQBzAGgAbwBsAGQASABpAGcAaAAAAAYAMwAuADMAAAA"
+"aAEEAbgBUAHIAaQBwADEAUwBpAGcAbgBhAGwAAAACADEAAAAaAEEAbgBUAHIAaQBwADEARQBuAGEA"
+"YgBsAGUAAAACADAAAAAcAEEAbgBUAHIAaQBwADEAQQBkAGMAVQBuAGkAdAAAAAIAMQAAACIAQQBuA"
+"FQAcgBpAHAAMQBBAGQAYwBDAGgAYQBuAG4AZQBsAAAABgBbADQAXQAAAA4AVABJADIAOAAzADcAeA"
+"AAADMAAAASAHUAcwBlAEkAbgB0AE8AcwBjAAAAAgAxAAAAGAB1AG4AaQBmAGwAYQBzAGgARgBpAGw"
+"AZQAAAAAAAAAWAHQAYQBzAGsARgByAGUAcQBUAG8AbAAAAAIAMQAAABQAdABhAHIAZwBlAHQAQwBv"
+"AHIAZQAAAAIAMQAAABIAcwB5AHMAQwBsAGsATQBIAHoAAAAGADEAOQAwAAAAFABpAG4AcwB0AGEAb"
+"ABsAEQAaQByAAAAAAAAAA4AZwBlAG4ATwBuAGwAeQAAAAIAMgAAABwAZQB4AHQATQBvAGQAZQBTAG"
+"MAaQBQAGkAbgBzAAAAEABbADQAMwAsACAANAAyAF0AAAAiAGUAeAB0AE0AbwBkAGUAQgB1AGYAZgB"
+"lAHIAUwBpAHoAZQAAAAoAMQAwADAAMAAwAAAAEgBlAHgAdABDAGwAawBNAEgAegAAAAQAMwAwAAAA"
+"CABjAGgAaQBwAAAAAgAxAAAAFgBiAHUAaQBsAGQAQwBvAG4AZgBpAGcAAAACADEAAAAKAGIAbwBhA"
+"HIAZAAAAAIAMgAAAEoAVQBTAEUAXwBEAEEAVABBAF8AVABZAFAARQBTAF8ARgBPAFIAXwBUAFUATg"
+"BBAEIATABFAF8AUABBAFIAQQBNAEUAVABFAFIAUwAAAAIAMQAAAA4AVAB6ADMARwBwAGkAbwAAAAI"
+"AMAAAABIAVAB6ADMARQBuAGEAYgBsAGUAAAACADAAAAAOAFQAegAyAEcAcABpAG8AAAAEADIANgAA"
+"ABIAVAB6ADIARQBuAGEAYgBsAGUAAAACADAAAAAOAFQAegAxAEcAcABpAG8AAAAEADEANAAAABIAV"
+"AB6ADEARQBuAGEAYgBsAGUAAAACADEAAAAaAFQAQQBSAEcARQBUAF8ARABFAFYASQBDAEUAAAAUAD"
+"AAfABDAE8ATQA4AHwAMAB8ADAAAAA0AFMAZQBjAG8AbgBkAGEAcgB5AEMAbwByAGUATQBvAGQAZQB"
+"sAEIAYQBzAGUATgBhAG0AZQAAAAAAAAAaAFMAZQBjAG8AbgBkAGEAcgB5AEMAbwByAGUAAAACADEA"
+"AAAgAFMAYQBtAHAAbABlAFQAaQBtAGUAUgBlAGwAVABvAGwAAAAEADEAMAAAACIATABpAG4AawBlA"
+"HIAQwBvAG0AbQBhAG4AZABGAGkAbABlAAAAAAAAABoARQBYAFQARQBSAE4AQQBMAF8ATQBPAEQARQ"
+"AAAAIAMQAAAB4AQwBoAGUAYwBrAEYAbwByAFUAcABkAGEAdABlAHMAAAACADEAAAAmAEEAbgBUAHI"
+"AaQBwADQAVABoAHIAZQBzAGgAbwBsAGQATABvAHcAAAACADAAAAAoAEEAbgBUAHIAaQBwADQAVABo"
+"AHIAZQBzAGgAbwBsAGQASABpAGcAaAAAAAIAMAAAABoAQQBuAFQAcgBpAHAANABTAGkAZwBuAGEAb"
+"AAAAAIAMQAAABoAQQBuAFQAcgBpAHAANABFAG4AYQBiAGwAZQAAAAIAMAAAABwAQQBuAFQAcgBpAH"
+"AANABBAGQAYwBVAG4AaQB0AAAAAgAxAAAAIgBBAG4AVAByAGkAcAA0AEEAZABjAEMAaABhAG4AbgB"
+"lAGwAAAACADAAAAAmAEEAbgBUAHIAaQBwADMAVABoAHIAZQBzAGgAbwBsAGQATABvAHcAAAACADAA"
+"AAAoAEEAbgBUAHIAaQBwADMAVABoAHIAZQBzAGgAbwBsAGQASABpAGcAaAAAAAIAMAAAABoAQQBuA"
+"FQAcgBpAHAAMwBTAGkAZwBuAGEAbAAAAAIAMQAAABoAQQBuAFQAcgBpAHAAMwBFAG4AYQBiAGwAZQ"
+"AAAAIAMAAAABwAQQBuAFQAcgBpAHAAMwBBAGQAYwBVAG4AaQB0AAAAAgAxAAAAIgBBAG4AVAByAGk"
+"AcAAzAEEAZABjAEMAaABhAG4AbgBlAGwAAAACADAAAAAmAEEAbgBUAHIAaQBwADIAVABoAHIAZQBz"
+"AGgAbwBsAGQATABvAHcAAAACADAAAAAoAEEAbgBUAHIAaQBwADIAVABoAHIAZQBzAGgAbwBsAGQAS"
+"ABpAGcAaAAAAAIAMAAAABoAQQBuAFQAcgBpAHAAMgBTAGkAZwBuAGEAbAAAAAIAMQAAABoAQQBuAF"
+"QAcgBpAHAAMgBFAG4AYQBiAGwAZQAAAAIAMAAAABwAQQBuAFQAcgBpAHAAMgBBAGQAYwBVAG4AaQB"
+"0AAAAAgAxAAAAIgBBAG4AVAByAGkAcAAyAEEAZABjAEMAaABhAG4AbgBlAGwAAAACADAAAAAmAEEA"
+"bgBUAHIAaQBwADEAVABoAHIAZQBzAGgAbwBsAGQATABvAHcAAAAIAC0AMAAuADUAAAAoAEEAbgBUA"
+"HIAaQBwADEAVABoAHIAZQBzAGgAbwBsAGQASABpAGcAaAAAAAYAMAAuADUAAAAaAEEAbgBUAHIAaQ"
+"BwADEAUwBpAGcAbgBhAGwAAAACADEAAAAaAEEAbgBUAHIAaQBwADEARQBuAGEAYgBsAGUAAAACADA"
+"AAAAcAEEAbgBUAHIAaQBwADEAQQBkAGMAVQBuAGkAdAAAAAIAMQAAACIAQQBuAFQAcgBpAHAAMQBB"
+"AGQAYwBDAGgAYQBuAG4AZQBsAAAAAgAwAAAADgBHAGUAbgBlAHIAaQBjAAAAAwAAADQAVQBTAEUAX"
+"wBTAFQAQQBSAFQAXwBUAEkATQBFAF8ASQBOAF8ASQBOAEkAVABfAEYAQwBOAAAAAgAxAAAASgBVAF"
+"MARQBfAEQAQQBUAEEAXwBUAFkAUABFAFMAXwBGAE8AUgBfAFQAVQBOAEEAQgBMAEUAXwBQAEEAUgB"
+"BAE0ARQBUAEUAUgBTAAAAAgAxAAAAPABHAEUATgBFAFIAQQBUAEUAXwBPAFUAVABQAFUAVABfAEEA"
+"TgBEAF8AVQBQAEQAQQBUAEUAXwBGAEMATgAAAAIAMA=="
+  ExtendedMatrixPrecision "1"
+  MatrixSignificanceCheck "2"
+  EnableStateSpaceSplitting "2"
+  DisplayStateSpaceSplitting "1"
+  DiscretizationMethod "2"
+  ExternalModeSettings "AAAAfwAAAAAWUU1hcDxRU3RyaW5nLFFTdHJpbmc+AAAAAAcAAAAYAF"
+"QAcgBpAGcAZwBlAHIAVgBhAGwAdQBlAAAAAgAwAAAAGABUAHIAaQBnAGcAZQByAEQAZQBsAGEAeQA"
+"AAAIAMAAAABwAVAByAGkAZwBnAGUAcgBDAGgAYQBuAG4AZQBsAAAABAAtADEAAAAWAFMAZQBuAHMA"
+"aQB0AGkAdgBpAHQAeQAAAAIAMAAAABYAUgBlAGYAcgBlAHMAaABSAGEAdABlAAAABAAxADAAAAAUA"
+"E4AdQBtAFMAYQBtAHAAbABlAHMAAAAKADEAMAAwADAAMAAAABQARABlAGMAaQBtAGEAdABpAG8Abg"
+"AAAAIAMQ=="
+  AlgebraicLoopMethod "1"
+  AlgebraicLoopTolerance "1e-6"
+  ScriptsDialogGeometry "[620 295 1008 351]"
+  ScriptsDialogSplitterPos "100"
+  Terminal {
+    Type          Output
+    Index         "1"
+  }
+  Terminal {
+    Type          Output
+    Index         "2"
+  }
+  Terminal {
+    Type          Output
+    Index         "3"
+  }
+  Schematic {
+    Location      [0, 27; 1920, 1005]
+    ZoomFactor    1
+    SliderPosition [34, 0]
+    ShowBrowser   off
+    BrowserWidth  143
+    Component {
+      Type          Scope
+      Name          "Signal Waveforms"
+      Show          on
+      Position      [1200, 495]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Location      [1268, 183; 1832, 746]
+      State         "AAAA/wAAAAD9AAAAAgAAAAEAAAAAAAAAAPwCAAAAA/sAAAAQAFoAbwBvA"
+"G0AQQByAGUAYQAAAAAA/////wAAADQA////+wAAABQAUwBhAHYAZQBkAFYAaQBlAHcAcwAAAAAA//"
+"///wAAAGYA////+wAAAAwAVAByAGEAYwBlAHMAAAAAAP////8AAABmAP///wAAAAMAAAPBAAAAffw"
+"BAAAAAfsAAAAUAEQAYQB0AGEAVwBpAGQAZwBlAHQAAAAAAAAAA8EAAABQAP///wAAAjQAAAIYAAAA"
+"BAAAAAQAAAAIAAAACPwAAAABAAAAAgAAAAEAAAAOAFQAbwBvAGwAQgBhAHIBAAAAAP////8AAAAAA"
+"AAAAA=="
+      SavedViews    "AAAAAgAAAAA="
+      HeaderState   "AAAA/wAAAAAAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAL/gMAAAAJAAAAC"
+"QAAAGQAAAACAAAAZAAAAAMAAABkAAAAAQAAAGQAAAAGAAAAZAAAAAcAAABkAAAABAAAAGQAAAAFAA"
+"AAZAAAAAgAAABkAAAAfQAAAAsBAAABAAAAAAAAAAAAAAAAZP////8AAACBAAAAAAAAAAsAAABZAAA"
+"AAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAAA"
+"AAAAAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAA"
+"AAkAAAAAQAAAAAAAAPoAAAAACQ="
+      PlotPalettes  "AAAAAQAAAAMAAAABAAAAAwAAAAEC//8u4P//zMwAAAAAAAEC//8AAP///"
+"/8AAAAAAAEC//9PsP////8AAAAAAAMAAAABAAAAAAEAAAAAAQAAAAADAAAAAQAAAAEAAAABAAAAAQ"
+"AAAAEAAAABAAAAAwAAAAEAAAAAAQAAAAABAAAAAAMAAAABP/AAAAAAAAAAAAABP/AAAAAAAAAAAAA"
+"BP/AAAAAAAAAAAAADAAAAAQAAAAABAAAAAAEA"
+      Axes          "1"
+      TimeRange     "0"
+      ScrollingMode "1"
+      SingleTimeAxis "1"
+      Open          "0"
+      Ts            "-1"
+      SampleLimit   "0"
+      XAxisLabel    ""
+      ShowLegend    "1"
+      Axis {
+        Name          ""
+        AutoScale     1
+        MinValue      0
+        MaxValue      1
+        Signals       {}
+        SignalTypes   [ ]
+        Untangle      0
+        KeepBaseline  off
+        BaselineValue 0
+      }
+      Fourier {
+        SingleXAxis       on
+        AxisLabel         "Frequency"
+        Scaling           0
+        PhaseDisplay      0
+        ShowFourierLegend off
+        Axis {
+          Name          ""
+          AutoScale     1
+          MinValue      0
+          MaxValue      1
+          Signals       {}
+          Untangle      0
+          KeepBaseline  off
+          BaselineValue 0
+        }
+      }
+    }
+    Component {
+      Type          Reference
+      SrcComponent  "TIC2000_Lib/PWM (Variable)"
+      Name          "PWM (Variable)"
+      Show          on
+      Position      [1210, 415]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Frame         [-35, -25; 35, 25]
+      Parameter {
+        Variable      "num_pwm"
+        Value         "3"
+        Show          off
+      }
+      Parameter {
+        Variable      "pwm_3"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "pwm_2"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "pwm_1"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "type"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "fc"
+        Value         "95e3"
+        Show          off
+      }
+      Parameter {
+        Variable      "fc_tol"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "delay"
+        Value         "0.1e-6"
+        Show          off
+      }
+      Parameter {
+        Variable      "polarity"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "fvar"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "sync_src"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "SyncOut"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "socsel"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "socsel_prd"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "intsel"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "intsel_prd"
+        Value         ""
+        Show          off
+      }
+      Parameter {
+        Variable      "tz1mode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "tz2mode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "tz3mode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "TargetPortIndices"
+        Value         "1"
+        Show          off
+      }
+      Terminal {
+        Type          Input
+        Position      [-35, -10]
+        Direction     left
+      }
+      Terminal {
+        Type          EventOutput
+        Position      [39, 15]
+        Direction     right
+      }
+      Terminal {
+        Type          EventOutput
+        Position      [39, -15]
+        Direction     right
+      }
+      Terminal {
+        Type          Input
+        Position      [-35, 10]
+        Direction     left
+      }
+      Terminal {
+        Type          EventOutput
+        Position      [39, 0]
+        Direction     right
+      }
+      Terminal {
+        Type          EventInput
+        Position      [0, -25]
+        Direction     up
+      }
+      Terminal {
+        Type          Input
+        Position      [-35, 0]
+        Direction     left
+      }
+    }
+    Component {
+      Type          ConstantRelationalOperator
+      Name          "Frequency over 0"
+      Show          on
+      Position      [910, 330]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-20, -10; 20, 10]
+      Parameter {
+        Variable      "Operator"
+        Value         "6"
+        Show          off
+      }
+      Parameter {
+        Variable      "Threshold"
+        Value         "0"
+        Show          off
+      }
+    }
+    Component {
+      Type          Reference
+      SrcComponent  "TIC2000_Lib/Digital Out"
+      Name          "PWM enable"
+      Show          on
+      Position      [1195, 230]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Frame         [-25, -20; 25, 20]
+      Parameter {
+        Variable      "gpio"
+        Value         "26"
+        Show          off
+      }
+      Parameter {
+        Variable      "OutputType"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "TargetPortIndices"
+        Value         "2"
+        Show          off
+      }
+      Terminal {
+        Type          Input
+        Position      [-25, 0]
+        Direction     left
+      }
+    }
+    Component {
+      Type          Constant
+      Name          "Frequency variation"
+      Show          on
+      Position      [1110, 430]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-10, -10; 10, 10]
+      Parameter {
+        Variable      "Value"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Display
+      Name          "Latest en"
+      Show          on
+      Position      [1290, 330]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Frame         [-11, -11; 11, 11]
+      Parameter {
+        Variable      "Notation"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "Precision"
+        Value         "0"
+        Show          off
+      }
+    }
+    Component {
+      Type          Reference
+      SrcComponent  "TIC2000_Lib/Powerstage Protection"
+      Name          "Powerstage Protection"
+      Show          on
+      Position      [1195, 330]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Frame         [-45, -25; 45, 25]
+      Parameter {
+        Variable      "EnableSignal"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "EnableSignalPolarity"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "EnableSignalGpio"
+        Value         "34"
+        Show          off
+      }
+      Parameter {
+        Variable      "PwmSafeState"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "Tz1Mode"
+        Value         "3"
+        Show          off
+      }
+      Parameter {
+        Variable      "Tz2Mode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "Tz3Mode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "TsigAMode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "TsigBMode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "TsigCMode"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "SimInterlock"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "TargetPortIndices"
+        Value         "3"
+        Show          off
+      }
+      Terminal {
+        Type          Input
+        Position      [-45, 0]
+        Direction     left
+      }
+      Terminal {
+        Type          Output
+        Position      [49, 0]
+        Direction     right
+      }
+    }
+    Component {
+      Type          Constant
+      Name          "PWM switch"
+      Show          on
+      Position      [1105, 230]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-10, -10; 10, 10]
+      Parameter {
+        Variable      "Value"
+        Value         "0"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Display
+      Name          "Frequency"
+      Show          on
+      Position      [520, 420]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Frame         [-31, -11; 31, 11]
+      Parameter {
+        Variable      "Notation"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "Precision"
+        Value         "4"
+        Show          off
+      }
+    }
+    Component {
+      Type          Constant
+      Name          "Speed"
+      Show          on
+      Position      [335, 480]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-40, -10; 40, 10]
+      Parameter {
+        Variable      "Value"
+        Value         "0"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          RateLimiter
+      Name          "Rate limiter"
+      Show          on
+      Position      [425, 480]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Parameter {
+        Variable      "RisingRateLimit"
+        Value         "0.1"
+        Show          off
+      }
+      Parameter {
+        Variable      "FallingRateLimit"
+        Value         "-10"
+        Show          off
+      }
+      Parameter {
+        Variable      "SampleTimeMode"
+        Value         "2"
+        Show          off
+      }
+    }
+    Component {
+      Type          Function
+      Name          "Sin 4"
+      Show          on
+      Position      [935, 395]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-20, -10; 20, 10]
+      Parameter {
+        Variable      "f(u)"
+        Value         "0.5+0.5*sin(u)"
+        Show          off
+      }
+    }
+    Component {
+      Type          Integrator
+      Name          "Integrator"
+      Show          on
+      Position      [750, 475]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Parameter {
+        Variable      "ExternalReset"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "InitialConditionSource"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "x0"
+        Value         "0"
+        Show          off
+      }
+      Parameter {
+        Variable      "ShowStatePort"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "EnableWrapping"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "UpperLimit"
+        Value         "2*pi"
+        Show          off
+      }
+      Parameter {
+        Variable      "LowerLimit"
+        Value         "0"
+        Show          off
+      }
+    }
+    Component {
+      Type          Product
+      Name          "Product"
+      Show          off
+      Position      [680, 475]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Parameter {
+        Variable      "IconShape"
+        Value         "1"
+        Show          off
+      }
+      Parameter {
+        Variable      "Inputs"
+        Value         "**"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Constant
+      Name          "Angular freq"
+      Show          on
+      Position      [595, 415]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-20, -10; 20, 10]
+      Parameter {
+        Variable      "Value"
+        Value         "2*pi"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Sum
+      Name          "Sum2"
+      Show          off
+      Position      [875, 475]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Parameter {
+        Variable      "IconShape"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "Inputs"
+        Value         "++|"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Constant
+      Name          "Phase\nshift 1"
+      Show          on
+      Position      [830, 420]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-25, -10; 25, 10]
+      Parameter {
+        Variable      "Value"
+        Value         "2*pi/3"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Function
+      Name          "Sin 5"
+      Show          on
+      Position      [935, 475]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-20, -10; 20, 10]
+      Parameter {
+        Variable      "f(u)"
+        Value         "0.5+0.5*sin(u)"
+        Show          off
+      }
+    }
+    Component {
+      Type          Sum
+      Name          "Sum3"
+      Show          off
+      Position      [875, 560]
+      Direction     up
+      Flipped       off
+      LabelPosition south
+      Parameter {
+        Variable      "IconShape"
+        Value         "2"
+        Show          off
+      }
+      Parameter {
+        Variable      "Inputs"
+        Value         "++|"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Constant
+      Name          "Phase\nshift 2"
+      Show          on
+      Position      [835, 505]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-25, -10; 25, 10]
+      Parameter {
+        Variable      "Value"
+        Value         "4*pi/3"
+        Show          off
+      }
+      Parameter {
+        Variable      "DataType"
+        Value         "10"
+        Show          off
+      }
+    }
+    Component {
+      Type          Function
+      Name          "Sin 6"
+      Show          on
+      Position      [935, 560]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Frame         [-20, -10; 20, 10]
+      Parameter {
+        Variable      "f(u)"
+        Value         "0.5+0.5*sin(u)"
+        Show          off
+      }
+    }
+    Component {
+      Type          SignalMux
+      Name          "Mux2"
+      Show          off
+      Position      [1020, 405]
+      Direction     right
+      Flipped       off
+      LabelPosition south
+      Parameter {
+        Variable      "Width"
+        Value         "3"
+        Show          off
+      }
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Frequency variation"
+      SrcTerminal   1
+      Points        [1140, 430; 1140, 415]
+      DstComponent  "PWM (Variable)"
+      DstTerminal   7
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Powerstage Protection"
+      SrcTerminal   2
+      DstComponent  "Latest en"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Frequency over 0"
+      SrcTerminal   2
+      DstComponent  "Powerstage Protection"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "PWM switch"
+      SrcTerminal   1
+      DstComponent  "PWM enable"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Speed"
+      SrcTerminal   1
+      DstComponent  "Rate limiter"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Product"
+      SrcTerminal   1
+      DstComponent  "Integrator"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Angular freq"
+      SrcTerminal   1
+      Points        [630, 415; 630, 470]
+      DstComponent  "Product"
+      DstTerminal   2
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Phase\nshift 1"
+      SrcTerminal   1
+      Points        [875, 420]
+      DstComponent  "Sum2"
+      DstTerminal   2
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Sum2"
+      SrcTerminal   1
+      DstComponent  "Sin 5"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Phase\nshift 2"
+      SrcTerminal   1
+      Points        [875, 505]
+      DstComponent  "Sum3"
+      DstTerminal   2
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Sum3"
+      SrcTerminal   1
+      DstComponent  "Sin 6"
+      DstTerminal   1
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Integrator"
+      SrcTerminal   2
+      Points        [785, 475]
+      Branch {
+        Points        [785, 395]
+        DstComponent  "Sin 4"
+        DstTerminal   1
+      }
+      Branch {
+        DstComponent  "Sum2"
+        DstTerminal   3
+      }
+      Branch {
+        Points        [785, 560]
+        DstComponent  "Sum3"
+        DstTerminal   3
+      }
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Sin 4"
+      SrcTerminal   2
+      DstComponent  "Mux2"
+      DstTerminal   2
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Sin 5"
+      SrcTerminal   2
+      Points        [980, 475; 980, 405]
+      DstComponent  "Mux2"
+      DstTerminal   3
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Sin 6"
+      SrcTerminal   2
+      Points        [990, 560; 990, 415]
+      DstComponent  "Mux2"
+      DstTerminal   4
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Mux2"
+      SrcTerminal   1
+      Points        [1050, 405]
+      Branch {
+        Points        [1050, 495]
+        DstComponent  "Signal Waveforms"
+        DstTerminal   1
+      }
+      Branch {
+        DstComponent  "PWM (Variable)"
+        DstTerminal   1
+      }
+    }
+    Connection {
+      Type          Signal
+      SrcComponent  "Rate limiter"
+      SrcTerminal   2
+      Points        [465, 480]
+      Branch {
+        DstComponent  "Product"
+        DstTerminal   3
+      }
+      Branch {
+        Points        [465, 420]
+        Branch {
+          DstComponent  "Frequency"
+          DstTerminal   1
+        }
+        Branch {
+          Points        [465, 330]
+          DstComponent  "Frequency over 0"
+          DstTerminal   1
+        }
+      }
+    }
+  }
+  Analysis {
+    Type          SteadyStateAnalysis
+    Name          "Steady-State Analysis"
+    OperatingPoint "1"
+    TimeSpan      "-1"
+    StartTime     "0"
+    Tolerance     "1e-4"
+    MaxIter       "20"
+    JacobianPerturbation "1e-4"
+    JacobianCalculation "2"
+    InitCycles    "0"
+    ShowCycles    "1"
+  }
+}
+DemoSignature "kTjXSPwJMdJPJEAzosWAtXdcMzaiZf6139/pCGj1tx4="
