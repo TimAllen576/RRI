@@ -2,3 +2,6 @@ venv/*
 .venv/*
 .idea/*
 ~$*.docx
+Pictures/*
+Horizontal_bearing/motor_vids/*
+Horizontal_bearing/*codegen*/*

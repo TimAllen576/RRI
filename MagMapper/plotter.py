@@ -13,7 +13,7 @@ from icecream import ic
 U_0 = 4 * np.pi * 10 ** -7
 HALL_INTERCEPT = -0.010254
 HALL_SLOPE = 1.14189
-MAX_GRAPHS = 8
+MAX_GRAPHS = 7
 
 
 class MagMapperData:
@@ -65,6 +65,15 @@ class MagMapperData:
         print(f"Characteristic value {self.filename}: "
               f"{inhomogeneity:P} mT")
 
+    def print_centre_mag_diff(self):
+        """Prints the difference between the centre of magnetism and
+        centre of geometry"""
+        field_max_index = self.dataframe["field"].idxmax()
+        centre_mag = self.dataframe["r"][field_max_index]
+        print(self.dataframe["r"].min())
+        if centre_mag != 0.0:
+            print(f"Centre of magnetism for {self.filename} is bad\n")
+
 
 class OldXYZRectangularData(MagMapperData):
     """Class to handle MagMapper data in the old rectangular format,
@@ -90,46 +99,6 @@ class OldXYZRectangularData(MagMapperData):
             slice_data = self.dataframe.loc[
                 self.dataframe["z"] == z_value, ["x", "y", "field"]]
             self.split_data.append(slice_data)
-
-    @staticmethod
-    def plot_heatmaps() -> None:
-        """Plots the data as a heatmap"""
-        print("This method is kept as legacy code and should not be used"
-              " as it does not sufficiently visualize differences. "
-              "Use plot_3d instead.")
-        # Last todos were error checks, formatting and possible change
-        # to pcolormesh
-
-        # x_steps = np.diff(pd.unique(self.dataframe["x"]))
-        # y_steps = np.diff(pd.unique(self.dataframe["y"]))
-        # if not (np.all(x_steps == x_steps[0]) or
-        #         np.all(y_steps == y_steps[0])):
-        #     raise ValueError("x or y step sizes are not equal.")
-        # num_rows, num_cols = make_rectangle(len(self.z_values))
-        # fig, axs = plt.subplots(ncols=num_cols, nrows=num_rows,
-        #                         sharex=True, sharey=True)
-        # axs = np.atleast_2d(axs)
-        # for ax_num, current_ax in enumerate(axs.flatten()):
-        #     current_ax: plt.axes
-        #     if ax_num >= len(self.z_values):
-        #         current_ax.axis("off")
-        #     else:
-        #         slice_data = self.split_data[ax_num]
-        #         y_samples = len(pd.unique(slice_data["y"]))
-        #         x_samples = len(pd.unique(slice_data["x"]))
-        #         if x_samples * y_samples != len(slice_data["y"]):
-        #             raise ValueError(f"Not all {y_samples} y samples have "
-        #                              f"{x_samples} x samples for "
-        #                              f"{len(slice_data['y'])} data points.")
-        #         reshaped_data = np.reshape(
-        #             slice_data["field"], (x_samples, y_samples))
-        #         extent = [np.min(slice_data["x"]), np.max(slice_data["x"]),
-        #                   np.min(slice_data["y"]), np.max(slice_data["y"])]
-        #         im = current_ax.imshow(reshaped_data, extent=extent)
-        #         current_ax.set(xlabel="x (mm)", ylabel="y (mm)",
-        #                        title=f"z={self.z_values[ax_num]}mm")
-        #         cbar = current_ax.figure.colorbar(im)
-        #         cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
 
     def plot_3d(self):
         """Plots the data as a 3d surface with colour-bar"""
@@ -249,57 +218,6 @@ class NewRotationalData(MagMapperData):
         min_sum_x = field_change_arr[min_sum_idx, 1]
         self.dataframe[changing_var] -= min_sum_x
 
-    @staticmethod
-    def plot_heatmaps() -> None:
-        """Plots the data as a heatmap"""
-        print("This method is kept as legacy code and should not be used"
-              " as it does not sufficiently visualize differences. "
-              "Use plot_3d instead.")
-        # Last todos were error checks and formatting
-
-        # r_steps = np.diff(pd.unique(self.dataframe["r"]))
-        # theta_steps = np.diff(pd.unique(self.dataframe["theta"]))
-        # if not (np.all(r_steps == r_steps[0]) or
-        #         np.all(theta_steps == theta_steps[0])):
-        #     raise ValueError("x or y step sizes are not equal.")
-        # num_rows, num_cols = make_rectangle(len(self.z_values))
-        # fig, axs = plt.subplots(ncols=num_cols, nrows=num_rows,
-        #                         sharex=True, sharey=True,
-        #                         subplot_kw={"polar": "True"},
-        #                         layout="compressed")
-        # axs = np.atleast_2d(axs)
-        # for ax_num, current_ax in enumerate(axs.flatten()):
-        #     current_ax: plt.axes
-        #     if ax_num >= len(self.z_values):
-        #         current_ax.axis("off")
-        #     else:
-        #         slice_data = self.split_data[ax_num]
-        #         r_values = pd.unique(slice_data["r"])
-        #         theta_values = pd.unique(slice_data["theta"])
-        #         r_samples = len(r_values)
-        #         theta_samples = len(theta_values)
-        #         if r_samples * theta_samples != len(slice_data.index):
-        #             raise ValueError(f"Not all {r_samples} radius "
-        #                              f"samples have {theta_samples} "
-        #                              f"theta samples for "
-        #                              f"{len(slice_data.index)} "
-        #                              f"data points.")
-        #         r, th = np.meshgrid(r_values, theta_values)
-        #         # Packing of theta and r are switched vs plt expected
-        #         field = np.reshape(slice_data["field"], r.T.shape)
-        #         im = current_ax.pcolormesh(th, r, field.T)
-        #         current_ax.set(theta_direction=-1, rticks=[0, max(r_values)],
-        #                        title=f"z={self.z_values[ax_num]}mm",
-        #                        theta_offset=np.pi/2)
-        #         # Magic nums put text "mm" next to outer r tick, could be
-        #         # done like ThetaFormatter but not worth the time
-        #         current_ax.text(0.36, max(r_values) + 4.5, "(mm)",
-        #                         va='center', ha='center',
-        #                         rotation='horizontal',
-        #                         rotation_mode='anchor')
-        #         cbar = current_ax.figure.colorbar(im, pad=0.1)
-        #         cbar.ax.set_ylabel("Field (T)", rotation=90, va="top")
-
     def plot_radial_slice(self):
         """Plots slices of constant radii"""
         for data_num, z_value_data in enumerate(self.split_data):
@@ -318,6 +236,8 @@ class NewRotationalData(MagMapperData):
                     z_value_data["r"] == radius, "field"]
                 theta_data = z_value_data.loc[
                     z_value_data["r"] == radius, "theta"]
+                if len(field_data) == 402:
+                    continue  # Errors due to multiple radii having exact same value
                 mean_centred_field = (field_data -
                                       np.mean(field_data)) * 1000
                 current_axs.plot(theta_data, mean_centred_field,
@@ -327,7 +247,8 @@ class NewRotationalData(MagMapperData):
                 current_axs.yaxis.set_label_position("right")
             fig.supxlabel("Theta (rad)")
             fig.supylabel("$B_z - B_{z, mean}$ (mT)")
-            fig.suptitle(f"Radial plots for z={self.z_values[data_num]}mm")
+            fig.suptitle(f"Radial plots for {self.filename}"
+                         f"z={self.z_values[data_num]}mm")
 
     def plot_theta_slice(self):
         """Plots slices of constant theta"""
@@ -497,7 +418,6 @@ def main():
     #  performance
     #  Tests?: check attributes of classes
     #  check bad data, check "known" data
-
     # Potential additions:
     # add different order classes,
     # add nans for missing values (usually not needed),
@@ -509,7 +429,7 @@ def main():
     #                                involve multiple files)
     # return non-centered data at end (coordinates move) x
 
-    for path in glob.glob("**/*/*PM1*", recursive=True):
+    for path in glob.glob("Tims_measurements/*6*/*rot*", recursive=True):
         # path = """C:/Users/twlln/Documents/RRI/MagMapper/
         # Old_measurements/PM1/20221208_PM1_1,8"""
         data = unpack_magmapper_data(path)
@@ -519,10 +439,12 @@ def main():
         data.plot_radial_slice()
         # data.print_accuracy()
         # data.print_characteristic()
+        # data.print_centre_mag_diff()
         if plt.gcf().get_axes():
             # plt.savefig(f"Plots/{data.filename}.pdf", format="pdf")
-            # plt.show()
-            plt.clf()
+            plt.show()
+            # plt.clf()
+            # plt.close()  # Not closing figs?
 
 
 if __name__ == "__main__":
