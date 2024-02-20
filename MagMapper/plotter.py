@@ -412,6 +412,8 @@ def make_rectangle(length):
 def main():
     """Runs the whole boi"""
     # TODO:
+    #  Orientation of centres of magnetism for rotor dynamics,
+    #  proper handling of  measurements which become duplicates after centring,
     #  check full dupe measurements, check centering acc, 300micron rad mov
     #  pull out and verify/refine error checks, (tests)
     #  check formatting of colour-bars,
